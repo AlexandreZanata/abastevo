@@ -1,6 +1,6 @@
 # Bounded daily official registry refresh
 
-Status: IN_PROGRESS. Selected scope: current user request (2026-10-10), P25-T02/T04/T05 operational refresh; existing staging origin and Abastevo namespace only. This does not certify G25/G09 or the outstanding RST20 long campaigns.
+Status: LOCAL_DONE / INTEGRATION_PENDING (source); DEPLOYED (bounded staging acceptance). Selected scope: current user request (2026-10-10), P25-T02/T04/T05 operational refresh; existing staging origin and Abastevo namespace only. This does not certify G25/G09 or the outstanding RST20 long campaigns.
 
 ## Behavior before implementation
 
@@ -14,7 +14,7 @@ Status: IN_PROGRESS. Selected scope: current user request (2026-10-10), P25-T02/
 
 BUC-SYNC01: a daily unchanged edition is verified without preparing/inserting another batch.
 BUC-SYNC02: failure after prepare/load/partial publication resumes exact files and stable IDs.
-BUC-SYNC03: a changed official name/address becomes readable; conflicting curated data remains intact and causes a visible failure.
+BUC-SYNC03: a changed source-owned name/address becomes readable; curated differences remain intact and are counted; locality conflicts cause a visible failure.
 BUC-SYNC04: duplicate workers, oversized/redirected/malformed sources, cancellation and missing DB evidence fail safely.
 BUC-SYNC05: mixed HTTP+sync run records CPU/RSS/time/accounting and stops on shared-host pressure without changing other systems.
 
@@ -22,8 +22,11 @@ Acceptance requires meaningful unit/race/negative tests, immediate real PostGIS 
 
 ## Implemented source checkpoint
 
-Status: LOCAL_DONE (source) / INTEGRATION_PENDING. Validation: PASS for scoped
-source acceptance; live deployment/mixed-load evidence follows separately.
+Status: LOCAL_DONE
+Validation: PASS
+
+Integration: INTEGRATION_PENDING. These declarations cover scoped source
+acceptance; deployed runtime and mixed-load evidence follow separately.
 
 The Go supervisor downloads ANP up to12MiB and IBGE up to8MiB (both wire and
 decoded), writes a sorted exact alias reference up to4MiB, and runs Rust/loader
@@ -95,3 +98,152 @@ Only allowlisted numeric child counters (up to4KiB buffered output) reach logs;
 the new resource event records `preserved_curated` rather than hiding a difference.
 The initial988740b binaries were installed for a server-side CronJob dry run
 only; no live sync used that superseded refusal policy.
+
+## Reproduction and scoped operations
+
+Source checks (from the repository root):
+
+```sh
+GOCACHE=/tmp/abastevo-go-cache go -C backend test -race ./cmd/station-sync ./cmd/station-load ./internal/modules/directory/adapters/registrysync ./internal/modules/directory/adapters/registry
+GOCACHE=/tmp/abastevo-go-cache go -C backend vet ./cmd/station-sync ./cmd/station-load ./internal/modules/directory/adapters/registrysync ./internal/modules/directory/adapters/registry ./internal/modules/directory/adapters
+```
+
+The critical integration tests require `-tags=integration` and the documented
+`ANPFUEL_TEST_DATABASE_URL` for a disposable PostgreSQL/PostGIS instance; never
+supply the persistent application's DSN to a test fixture. Select
+`TestDailySyncActualRustLoaderRecoveryChangedReadAndOverlap`,
+`TestPreparedPublicationThroughHTTPAndProfiles`, and
+`TestPreparedDailyRefreshUpdatesOwnedFactsSkipsUnchangedAndPreservesConflicts`.
+The actual Rust pipeline test additionally needs its existing preparer executable;
+`ANPFUEL_TEST_PREPARER_PATH` selects that executable. Each integration fixture creates and cleans
+its own uniquely named database, retaining persistent Abastevo data.
+
+Build `station-sync` and `station-load` from the tested source with
+`CGO_ENABLED=0 GOOS=linux GOARCH=amd64`, `-trimpath`, and `-ldflags='-s -w'`.
+Install them plus the tested Rust `prepare_registry` in an immutable, read-only
+revision directory under `/opt/abastevo-temp/registry-sync/releases/`. Compare all
+three SHA-256 values before deployment. Keep the separate private state directory
+owned by UID1000 with mode0700. The CronJob template pins both the runtime image
+digest and this revision directory; its initial suspension is intentional.
+
+Render `__REVISION__`, validate the rendered manifest with the Kubernetes server,
+and apply only this namespaced CronJob. Before a bounded manual run, check the
+existing resource guard; generate a Job from the CronJob, use an explicit
+`abastevo-rst-*` name, set ownership label `app=abastevo-rst-hardening` and
+`backoffLimit=0`, then run `infra/scripts/load/guard_job.py` for that exact Job.
+A mixed test uses `guarded_http.py` with the committed hardening routes,
+`--rate 5 --clients 8 --warmup 10 --seconds 300 --trials 1 --p95-ms 500`.
+Couple any HTTP failure to `guard_job.stop_owned` for only the named test Job.
+These are one-window operational pilots, not the RST20/21 capacity campaign.
+
+Enable the daily schedule only after successful live publication, unchanged
+verification, resource/HTTP acceptance and provenance checks. To pause, patch
+only `abastevo-registry-sync.spec.suspend=true`; an already running Job requires
+separate identification and ownership verification. Keep pending/success state,
+prepared snapshots and DB history for recovery. To change executables, install a
+new immutable release and change only this CronJob's tools path; never overwrite
+a mounted executable or roll the API/media pod for a CLI-only change. No edge,
+other namespace, image cleanup or foreign workload operation belongs here.
+
+## Live execution and final application update (2026-10-10)
+
+Tested behavior revision: `13c7c25`. Immutable mounted executables have explicit
+SHA-256 provenance; the existing API/worker image tags remain unchanged and do
+not identify the running source. Existing schema53 is retained; no new migration.
+The real source hash matches the earlier imported national edition, so this
+first worker run proves complete edition membership/revalidation and publication
+accounting, not a newly changed upstream station. Changed/reverted facts are
+proved by the immediate real PostGIS integration tests.
+
+`abastevo-rst-sync-live-20261010` succeeded in120.7796s: Rust prepare5.3026s,
+1.3215 child CPU-seconds,115608KiB child RSS; Go load/publication113.5025s,
+27.3946 child CPU-seconds,14336KiB child RSS. Cgroup memory peak198205440B
+(189.0MiB, including file cache), under256Mi. Source45738 rows reconciled to45617
+accepted and121 quarantined;10 curated projections preserved explicitly. No
+coordinates promoted. Assertions remain70169 (24552 synthetic plus45617 real),
+Directory stations45618 (including the existing development fixture). A new
+edition membership is not45617 new canonical stations.
+
+`abastevo-rst-sync-unchanged-20261010` succeeded in2.8713s, cgroup peak21700608B
+(20.7MiB). Read-only verification0.7018s,0.0119 child CPU-seconds,14168KiB child
+RSS,45617 accounted and10 preserved curated; no preparer or load/publication
+stage. These child CPU numbers exclude supervisor and DB CPU; they are not total
+host cost. Persistent private prepared state54031940B for this first snapshot;
+future retention keeps at most current+previous completed snapshots plus pending.
+DB/history storage is intentionally not reaped by this worker.
+
+One actual HTTPS mixed pilot offered/completed1500 requests over300.0004s at5/s,
+zero errors/drops/missed arrivals, >=166 samples per route and worst route
+p95=274.736ms (national text), below500ms. Preparation/loading overlaps only the
+first part of the window (worker120.8s), followed by reads after publication;
+this is not300s of continuous import pressure. The separate10s/50-request warmup
+had a cold dense-route p95=1044.151ms; it is retained and excluded from steady
+acceptance rather than hidden. Route p99 is unqualified/null, and this is one
+mixed trial, not five repeated capacity trials.
+
+Mixed-job guard15 samples: maximum host load1=3.7446 under5.2, minimum available
+RAM24547.2MiB, sampled DB memory<=200MiB, zero guard violations, no OOM or
+unexpected service restart. Host load and PG/WAL counters are shared aggregates,
+not isolated cost attribution. Client-side verified HTTPS includes network/TLS/
+edge behavior; requests ask no-cache but do not prove every backend cache miss.
+
+The final deployment also includes existing community fix `0cbedf9`, which
+converges identical concurrent photo retries while refusing conflicting payloads.
+Three immediate PostGIS cases passed five repetitions (15 test executions),
+including eight concurrent identical submissions and divergent/subset negatives.
+An explicit disposable anchor DB supplies the test child URL; fixtures migrate
+only new `community_test_*` DBs. All cleanup passed. The initial attempt using
+the application secret directly as the test URL was rejected by automatic review
+before execution. The approved isolated bootstrap instead creates/removes only
+`abastevo_rst_community_anchor_20261010`, redirects the child to it, and filters
+output to case names/outcomes. No persistent application fixture was modified.
+The community adapters package has no non-integration tests; its unit invocation
+is not counted as race-tested behavior. Existing scoped sync/loader race tests
+and the actual concurrent DB cases provide their separately named evidence.
+
+API and existing worker now execute13c7c25 binaries using atomic, versioned
+read-only mounted entrypoints. The exact container PID1 command was checked
+before SIGTERM; only API and worker restarted once intentionally. Pod UID remains
+`8c3c2e3b-615e-4af3-98b8-d215460a074a`; private-storage and DB restarts remain0,
+and the private media emptyDir was not recreated, copied or deleted. Previous
+executables remain for recovery. An aggregate filesystem hash comparison varied:
+MinIO internal bookkeeping changes while running; the inspected volume contained
+only internal `.minio.sys` files. That comparison is not accepted as per-photo
+integrity evidence. No media preservation claim is inferred from a stable global
+filesystem digest, and no storage/DB/foreign workload restart was performed.
+
+The final13c7c25 API completed a separate300.0002s HTTPS window at5/s:1500
+correct responses, zero errors/drops/missed arrivals, worst route p95=473.837ms
+(national text), below500ms. This window has no ongoing ingestion and is not
+statistically interchangeable with the first mixed window. Both artifacts retain
+all route counts/quantiles and unqualified p99. Total steady requests3000;
+this proves the tested envelope, not maximum users or replicated RST capacity.
+
+The deployed CronJob is now unsuspended, daily03:00 America/Cuiaba, Forbid,
+250m/256Mi and1200s deadline, tools pinned to13c7c25. `lastScheduleTime` is null
+at activation: both successful sync runs were manual acceptance Jobs, not an
+elapsed daily/24h scheduled run. Final read-only accounting:45618 stations,
+45617 profiles,70169 assertions. All45617 prepared ANP station IDs have profiles;
+one pre-existing non-ANP identity has no profile and remains outside this source
+publication. The initial whole-directory count assertion expected45618 profiles
+and failed; it was corrected to distinguish source membership rather than create
+a synthetic profile or misreport acceptance. Existing API/general
+worker each have one intentional restart; storage/DB remain at zero.
+
+[Sanitized acceptance/provenance](evidence/registry-sync-20261010/acceptance.json),
+[prepared manifest](evidence/registry-sync-20261010/prepared-manifest.json),
+[mixed HTTPS](evidence/registry-sync-20261010/https-mixed-5.json),
+[final API HTTPS](evidence/registry-sync-20261010/https-postdeploy-5.json) and
+[executable hashes](evidence/registry-sync-20261010/deployed-binaries.sha256)
+record the measured revision, bounds, counters and raw artifact fingerprints.
+Only aggregate/method/provenance data is committed; source rows, photos,
+credentials and raw API logs remain excluded. RST20/21 prolonged stability,
+full costs and maximum user capacity remain PARTIAL / NOT_ACCEPTED.
+
+The selected raw bundle (CSV timings, guard telemetry, numeric worker/test logs,
+metadata and scoped operation sources; no raw station rows/photos/API logs or
+credentials) is retained mode0600 at
+`/opt/abastevo-temp/registry-sync/evidence/20261010/selected-evidence.tar.gz`.
+SHA-256: `2539b17df9ff518b723aca0e84f25aaa2ef7548c66ec8f74782c638bb16799da`.
+It preserves the failed global-media comparison as an unaccepted diagnostic,
+and never treats it as successful integrity evidence.

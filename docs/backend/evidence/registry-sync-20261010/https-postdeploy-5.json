@@ -1,0 +1,273 @@
+{
+  "format": "abastevo-https-pilot-v2",
+  "wall_end": "2026-10-10T22:04:48.687709+00:00",
+  "origin": "https://teste.abastevo.com.br",
+  "layer": "client HTTPS including TLS/edge/network",
+  "cache": "client asks no-cache; edge behavior unchanged",
+  "transport": "Python http.client, one reusable verified TLS/HTTP1.1 connection per worker; max8; no automatic retry",
+  "guard_sha256": "ae1066cbd9d0842b6f7e68942dc72cf50ca6e9ae194dcd6eac7d1211eb532633",
+  "driver_sha256": "46fd4ac1917a5b0494796205fb1aa0e89ef2e9c75b1461aef768317f422ee089",
+  "parameters": {
+    "routes": "docs/backend/evidence/rst-hardening-20261010/routes.json",
+    "out": "https-postdeploy-5",
+    "dataset_manifest": "prior imported snapshot (SHA-256 pinned in dataset)",
+    "rate": 5.0,
+    "p95_ms": 500.0,
+    "clients": 8,
+    "seconds": 300,
+    "warmup": 10,
+    "trials": 1
+  },
+  "routes": [
+    {
+      "name": "city_dense",
+      "path": "/v1/stations?state=SP&municipality_code=3550308&limit=20",
+      "required": "items"
+    },
+    {
+      "name": "city_dense",
+      "path": "/v1/stations?state=SP&municipality_code=3550308&limit=20",
+      "required": "items"
+    },
+    {
+      "name": "city_dense",
+      "path": "/v1/stations?state=SP&municipality_code=3550308&limit=20",
+      "required": "items"
+    },
+    {
+      "name": "city_sorriso",
+      "path": "/v1/stations?state=MT&municipality_code=5107925&limit=20",
+      "required": "items"
+    },
+    {
+      "name": "city_sparse",
+      "path": "/v1/stations?state=AC&municipality_code=1200054&limit=20",
+      "required": "items"
+    },
+    {
+      "name": "city_empty",
+      "path": "/v1/stations?state=RO&municipality_code=1100098&limit=20",
+      "required": "items"
+    },
+    {
+      "name": "text_national",
+      "path": "/v1/stations?q=POSTO&limit=20",
+      "required": "items"
+    },
+    {
+      "name": "detail",
+      "path": "/v1/stations/2a912258-2017-81df-329c-98b04947c710",
+      "required": "station_id"
+    },
+    {
+      "name": "profile",
+      "path": "/v1/stations/2a912258-2017-81df-329c-98b04947c710/profile",
+      "required": "station_id"
+    }
+  ],
+  "hashes": {
+    "trial-1-warmup.csv": "e5cf86ea6975bc641aaa759c516da060b9bba7c58cd0a0ba2bbcde0d562a4b14",
+    "trial-1-steady.csv": "7fc6ec06121a0ae51abb15614ca0c359c4fa5412beac67867c79931147c895a2",
+    "guard.jsonl": "9fcd60b476e5a4e0283acaebbd8da88165d5370f87f85973c1ff3dbb51f953fb"
+  },
+  "summaries": [
+    {
+      "trial": 1,
+      "phase": "warmup",
+      "requested_seconds": 10,
+      "observation_seconds": 10.00021871800709,
+      "offered": 50,
+      "completed": 50,
+      "success": 50,
+      "errors": 0,
+      "drops": 0,
+      "missed": 0,
+      "reconciled": true,
+      "successful_rps": 4.999890643388281,
+      "routes": {
+        "city_dense": {
+          "n": 18,
+          "p50_ms": 87.81456999713555,
+          "p95_ms": 209.533000990632,
+          "p99_ms": null,
+          "p99_qualified": false
+        },
+        "city_sorriso": {
+          "n": 6,
+          "p50_ms": 93.5000440076692,
+          "p95_ms": 105.11939199932385,
+          "p99_ms": null,
+          "p99_qualified": false
+        },
+        "city_sparse": {
+          "n": 6,
+          "p50_ms": 56.044316006591544,
+          "p95_ms": 209.1131060005864,
+          "p99_ms": null,
+          "p99_qualified": false
+        },
+        "city_empty": {
+          "n": 5,
+          "p50_ms": 53.10263000137638,
+          "p95_ms": 77.72730400029104,
+          "p99_ms": null,
+          "p99_qualified": false
+        },
+        "text_national": {
+          "n": 5,
+          "p50_ms": 133.47571999474894,
+          "p95_ms": 206.85428599244915,
+          "p99_ms": null,
+          "p99_qualified": false
+        },
+        "detail": {
+          "n": 5,
+          "p50_ms": 54.95215900009498,
+          "p95_ms": 59.112193004693836,
+          "p99_ms": null,
+          "p99_qualified": false
+        },
+        "profile": {
+          "n": 5,
+          "p50_ms": 60.84395700599998,
+          "p95_ms": 81.74888799840119,
+          "p99_ms": null,
+          "p99_qualified": false
+        }
+      },
+      "p95_qualified": false,
+      "p95_budget_ms": 500.0,
+      "p95_budget_pass": true
+    },
+    {
+      "trial": 1,
+      "phase": "steady",
+      "requested_seconds": 300,
+      "observation_seconds": 300.0002363699896,
+      "offered": 1500,
+      "completed": 1500,
+      "success": 1500,
+      "errors": 0,
+      "drops": 0,
+      "missed": 0,
+      "reconciled": true,
+      "successful_rps": 4.999996060503277,
+      "routes": {
+        "city_dense": {
+          "n": 501,
+          "p50_ms": 81.90009600366466,
+          "p95_ms": 219.3756220076466,
+          "p99_ms": null,
+          "p99_qualified": false
+        },
+        "city_sorriso": {
+          "n": 167,
+          "p50_ms": 76.87123300274834,
+          "p95_ms": 207.58588399621658,
+          "p99_ms": null,
+          "p99_qualified": false
+        },
+        "city_sparse": {
+          "n": 167,
+          "p50_ms": 57.45823300094344,
+          "p95_ms": 101.0949120100122,
+          "p99_ms": null,
+          "p99_qualified": false
+        },
+        "city_empty": {
+          "n": 167,
+          "p50_ms": 55.689568995148875,
+          "p95_ms": 83.20623300096486,
+          "p99_ms": null,
+          "p99_qualified": false
+        },
+        "text_national": {
+          "n": 166,
+          "p50_ms": 136.37429699883796,
+          "p95_ms": 473.8367859972641,
+          "p99_ms": null,
+          "p99_qualified": false
+        },
+        "detail": {
+          "n": 166,
+          "p50_ms": 56.17163500573952,
+          "p95_ms": 106.19847101042978,
+          "p99_ms": null,
+          "p99_qualified": false
+        },
+        "profile": {
+          "n": 166,
+          "p50_ms": 57.017307000933215,
+          "p95_ms": 106.1871690035332,
+          "p99_ms": null,
+          "p99_qualified": false
+        }
+      },
+      "p95_qualified": true,
+      "p95_budget_ms": 500.0,
+      "p95_budget_pass": true
+    }
+  ],
+  "dataset": {
+    "sha256": "2763e22d6d0123df5c2c4bd7aaad4ee23d777c2d5f0bee2e99cb8c8b3d58f0d3",
+    "manifest": {
+      "format_version": "station-batch-v1",
+      "run_id": "8b1aba98-2bb9-5666-a038-cfc739bddafe",
+      "parser_version": "station-prep-v0.3.0",
+      "policy_version": "station-policy-v2",
+      "municipality_reference": {
+        "reference": "ibge-localidades-frozen",
+        "reference_hash": "9ffbeda37d527bd9ef1293ecfae53e542dddd49570664bb590a9df6526da36e5"
+      },
+      "started_at": "2026-10-10T14:22:08.353372+00:00",
+      "ended_at": "2026-10-10T14:22:08.353372+00:00",
+      "inputs": [
+        {
+          "key": "registry-13col",
+          "reference": "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/arquivos/arquivos-dados-cadastrais-dos-revendedores-varejistas-de-combustiveis-automotivos/dados-cadastrais-revendedores-varejistas-combustiveis-automoveis.csv",
+          "edition": "ANP-page-updated-2026-10-09",
+          "edition_seq": 1,
+          "sha256": "35101dee91a7a6398043a67d478e60f2b0e0776e5e53436ba80517d9db0c2e8e",
+          "bytes": 7890947,
+          "rows": 45738,
+          "encoding": "UTF-8 without BOM"
+        }
+      ],
+      "counts": {
+        "registry-13col": {
+          "input": 45738,
+          "accepted": 45617,
+          "duplicates": 0,
+          "quarantined": 121
+        }
+      },
+      "completeness": {
+        "eof_validated": true,
+        "expected_manifest": true
+      },
+      "outputs": [
+        {
+          "path": "assertions.jsonl",
+          "sha256": "1fe52a843218252681e3fd69f7692a661993d1bd291ff02dffb1ccd97167c2a8",
+          "bytes": 43328274,
+          "rows": 45617
+        },
+        {
+          "path": "candidates.jsonl",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "rows": 0
+        },
+        {
+          "path": "quarantine.jsonl",
+          "sha256": "8f65b75478de1ee44a88786fa68dbd9d93cebfe3bee28db115b37249208c0a62",
+          "bytes": 27239,
+          "rows": 121
+        }
+      ]
+    }
+  },
+  "stopped": false,
+  "reasons": [],
+  "qualification": "bounded real HTTPS campaign; dataset coverage and 24/48h stability require independent evidence"
+}
