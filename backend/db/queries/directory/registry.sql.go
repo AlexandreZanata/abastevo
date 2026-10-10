@@ -88,6 +88,24 @@ func (q *Queries) CountCompleteRegistryRuns(ctx context.Context, source string) 
 	return count, err
 }
 
+const countPreparedCuratedFacts = `-- name: CountPreparedCuratedFacts :one
+SELECT count(*) FROM registry_assertions a JOIN registry_run_assertions m ON m.assertion_id=a.id
+JOIN directory_stations s ON s.id=a.station_id
+WHERE m.run_id= $1 AND a.source='station-prep' AND a.municipality_code IS NOT NULL
+ AND a.state IS NOT NULL AND a.latitude IS NULL AND a.longitude IS NULL AND a.superseded_by IS NULL
+ AND (s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address)
+ AND NOT EXISTS (SELECT 1 FROM registry_assertions previous JOIN registry_source_runs r ON r.id=previous.run_id
+ WHERE previous.source='station-prep' AND previous.source_key=a.source_key AND previous.station_id=s.id
+ AND previous.display_name=s.display_name AND previous.address=s.address AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL)
+`
+
+func (q *Queries) CountPreparedCuratedFacts(ctx context.Context, runID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countPreparedCuratedFacts, runID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countPreparedPublicationRows = `-- name: CountPreparedPublicationRows :one
 SELECT count(*) FROM registry_assertions a JOIN registry_run_assertions m ON m.assertion_id=a.id
 WHERE m.run_id = $1 AND a.source='station-prep' AND a.municipality_code IS NOT NULL
@@ -130,8 +148,10 @@ WHERE m.run_id = $1 AND a.source='station-prep' AND a.municipality_code IS NOT N
   AND a.state IS NOT NULL AND a.latitude IS NULL AND a.longitude IS NULL
   AND a.superseded_by IS NULL AND (a.station_id IS NULL OR EXISTS (
  SELECT 1 FROM directory_stations s WHERE s.id=a.station_id AND
- (s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address
- OR s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state)))
+ (s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state
+ OR ((s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address) AND EXISTS (SELECT 1 FROM registry_assertions previous JOIN registry_source_runs r ON r.id=previous.run_id
+ WHERE previous.source='station-prep' AND previous.source_key=a.source_key AND previous.station_id=s.id
+ AND previous.display_name=s.display_name AND previous.address=s.address AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL)))))
 `
 
 func (q *Queries) CountUnpublishedPreparedRows(ctx context.Context, runID pgtype.UUID) (int64, error) {
@@ -767,8 +787,10 @@ WHERE m.run_id = $1 AND a.id > $2
   AND a.source = 'station-prep' AND a.latitude IS NULL AND a.longitude IS NULL
   AND a.superseded_by IS NULL AND (a.station_id IS NULL OR EXISTS (
  SELECT 1 FROM directory_stations s WHERE s.id=a.station_id AND
- (s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address
- OR s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state)))
+ (s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state
+ OR ((s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address) AND EXISTS (SELECT 1 FROM registry_assertions previous JOIN registry_source_runs r ON r.id=previous.run_id
+ WHERE previous.source='station-prep' AND previous.source_key=a.source_key AND previous.station_id=s.id
+ AND previous.display_name=s.display_name AND previous.address=s.address AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL)))))
 ORDER BY a.id LIMIT 100
 `
 
@@ -912,13 +934,14 @@ WITH refreshed AS (
    AND EXISTS (
     SELECT 1 FROM registry_assertions AS previous JOIN registry_source_runs AS r ON r.id=previous.run_id
     WHERE previous.station_id=s.id AND previous.source='station-prep'
+ AND previous.source_key=(SELECT normalized_value FROM directory_identifiers WHERE station_id=s.id AND kind='CNPJ' AND valid_to IS NULL LIMIT 1)
       AND previous.display_name=s.display_name AND previous.address=s.address
       AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL
    )
  RETURNING s.id
 )
-SELECT id FROM refreshed
-UNION ALL SELECT id FROM directory_stations WHERE id= $3 AND display_name= $1 AND address= $2::jsonb
+SELECT id,false AS preserved_curated FROM refreshed
+UNION ALL SELECT id,(display_name IS DISTINCT FROM $1 OR address IS DISTINCT FROM $2::jsonb) AS preserved_curated FROM directory_stations WHERE id= $3
 LIMIT 1
 `
 
@@ -928,11 +951,16 @@ type RefreshPreparedStationFactsParams struct {
 	ID          pgtype.UUID `json:"id"`
 }
 
-func (q *Queries) RefreshPreparedStationFacts(ctx context.Context, arg RefreshPreparedStationFactsParams) (pgtype.UUID, error) {
+type RefreshPreparedStationFactsRow struct {
+	ID               pgtype.UUID `json:"id"`
+	PreservedCurated bool        `json:"preserved_curated"`
+}
+
+func (q *Queries) RefreshPreparedStationFacts(ctx context.Context, arg RefreshPreparedStationFactsParams) (RefreshPreparedStationFactsRow, error) {
 	row := q.db.QueryRow(ctx, refreshPreparedStationFacts, arg.DisplayName, arg.Address, arg.ID)
-	var id pgtype.UUID
-	err := row.Scan(&id)
-	return id, err
+	var i RefreshPreparedStationFactsRow
+	err := row.Scan(&i.ID, &i.PreservedCurated)
+	return i, err
 }
 
 const resumePreparedRun = `-- name: ResumePreparedRun :execrows

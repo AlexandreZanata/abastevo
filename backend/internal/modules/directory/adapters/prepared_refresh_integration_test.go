@@ -97,8 +97,13 @@ func TestPreparedDailyRefreshUpdatesOwnedFactsSkipsUnchangedAndPreservesConflict
 	if _, e = registry.LoadPreparedBatch(ctx, pool, conflict, open); e != nil {
 		t.Fatal(e)
 	}
-	if _, e = registry.PublishPreparedRegistry(ctx, store, ports, conflict); e == nil {
-		t.Fatal("curated conflict overwritten")
+	preserved, e := registry.PublishPreparedRegistry(ctx, store, ports, conflict)
+	if e != nil || preserved.Skipped != 1 {
+		t.Fatalf("curated conflict not explicitly accounted: %+v %v", preserved, e)
+	}
+	verified, e := registry.VerifyPreparedPublication(ctx, store, conflict)
+	if e != nil || verified.Skipped != 1 {
+		t.Fatalf("curated verification %+v %v", verified, e)
 	}
 	got, e = read.NewReader(pool).Detail(ctx, id)
 	if e != nil || !strings.Contains(got.DisplayName, "CURATED") {

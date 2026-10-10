@@ -29,3 +29,16 @@ func TestChildFailureRedactsSecretAndSourceText(t *testing.T) {
 		t.Fatal("child failed without safe error")
 	}
 }
+
+func TestChildCountersAreBoundedAndAllowlisted(t *testing.T) {
+	var output countsBuffer
+	_, _ = output.Write([]byte("accepted=7 preserved_curated=2 secret=synthetic-private-value source_key=04218406000104 accepted=invalid\n"))
+	result := output.counts()
+	if len(result) != 2 || result["accepted"] != 7 || result["preserved_curated"] != 2 {
+		t.Fatalf("unsafe counters %+v", result)
+	}
+	_, _ = output.Write([]byte(strings.Repeat("X", 10000)))
+	if output.Len() != 4096 {
+		t.Fatal("child output exceeded cap")
+	}
+}

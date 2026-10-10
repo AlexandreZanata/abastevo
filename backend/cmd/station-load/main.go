@@ -82,7 +82,7 @@ func run() error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("verification=complete registry_assertions=%d run=%s\n", report.Reconciled, report.RunID)
+		fmt.Printf("verification=complete registry_assertions=%d preserved_curated=%d run=%s\n", report.Reconciled, report.Skipped, report.RunID)
 		return nil
 	}
 	var reports map[string]registry.Report
@@ -117,7 +117,7 @@ func run() error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("publication=complete registry_assertions=%d run=%s source=station-prep coordinates=unreviewed\n", publication.Reconciled, publication.RunID)
+		fmt.Printf("publication=complete registry_assertions=%d preserved_curated=%d run=%s source=station-prep coordinates=unreviewed\n", publication.Reconciled, publication.Skipped, publication.RunID)
 	}
 	return nil
 }

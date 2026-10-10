@@ -85,9 +85,12 @@ func (c RegistryCanonicalizer) RefreshPreparedFacts(ctx context.Context, station
 	if err != nil {
 		return err
 	}
-	_, err = directory.New(c.Repo.pool).RefreshPreparedStationFacts(ctx, directory.RefreshPreparedStationFactsParams{ID: uid, DisplayName: display, Address: raw})
+	result, err := directory.New(c.Repo.pool).RefreshPreparedStationFacts(ctx, directory.RefreshPreparedStationFactsParams{ID: uid, DisplayName: display, Address: raw})
 	if err != nil {
 		return fmt.Errorf("registry: source facts conflict/unavailable: %w", err)
+	}
+	if result.PreservedCurated {
+		return registry.ErrCuratedFacts
 	}
 	return nil
 }

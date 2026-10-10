@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -14,6 +15,8 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -102,7 +105,8 @@ func child(ctx context.Context, stage, binary string, args []string, db bool) er
 	}
 	// Source/library errors can contain input fragments; logs expose only stages,
 	// exit status and aggregate timing/resource counters, never child output.
-	cmd.Stdout = io.Discard
+	var output countsBuffer
+	cmd.Stdout = &output
 	cmd.Stderr = io.Discard
 	err := cmd.Run()
 	fields := map[string]any{"stage": stage, "seconds": time.Since(started).Seconds(), "ok": err == nil}
@@ -111,9 +115,39 @@ func child(ctx context.Context, stage, binary string, args []string, db bool) er
 		fields["child_max_rss_kib"] = usage.Maxrss
 		fields["child_cpu_seconds"] = cmd.ProcessState.UserTime().Seconds() + cmd.ProcessState.SystemTime().Seconds()
 	}
+	fields["counts"] = output.counts()
 	event("stage_complete", fields)
 	if err != nil {
 		return fmt.Errorf("refresh stage %s failed", stage)
 	}
 	return nil
+}
+
+// At most4KiB of known numeric CLI counters are retained. Other child output
+// is discarded, including source fragments and persistence error strings.
+type countsBuffer struct{ bytes.Buffer }
+
+func (b *countsBuffer) Write(p []byte) (int, error) {
+	n := len(p)
+	if b.Len() < 4096 {
+		keep := 4096 - b.Len()
+		if len(p) > keep {
+			p = p[:keep]
+		}
+		_, _ = b.Buffer.Write(p)
+	}
+	return n, nil
+}
+func (b *countsBuffer) counts() map[string]uint64 {
+	result := map[string]uint64{}
+	allowed := map[string]bool{"input": true, "accepted": true, "duplicates": true, "quarantined": true, "rejected": true, "registry_assertions": true, "preserved_curated": true}
+	for _, token := range strings.Fields(b.String()) {
+		key, value, ok := strings.Cut(token, "=")
+		if ok && allowed[key] {
+			if count, err := strconv.ParseUint(value, 10, 64); err == nil {
+				result[key] = count
+			}
+		}
+	}
+	return result
 }

@@ -8,7 +8,7 @@ Status: IN_PROGRESS. Selected scope: current user request (2026-10-10), P25-T02/
 - B-BR-SYNC02: downloads stream to owned disk under byte/deadline/redirect bounds. The Rust child prepares one bounded snapshot; the Go loader validates/publishes it. Children run serially under one resource envelope. No source rows, DSNs or response bodies in logs.
 - B-BR-SYNC03: unchanged source/reference/pipeline fingerprint verifies the last prepared publication in the DB and skips preparation/writes. Durable pending metadata and exact frozen files survive process death; retry resumes that batch before fetching another. Success is recorded only after publication. Failure preserves last success and canonical/history data.
 - B-BR-SYNC04: CronJob Forbid plus an exclusive OS lock on the shared Abastevo state directory prevents overlapping processes; no foreign directory cleanup. Snapshot identity/hash/timestamp are immutable on resume. Only owned temporary/previous artifacts may be removed; no persistent DB facts are deleted.
-- B-BR-SYNC05: source-backed name/address refresh may update the canonical projection only if its current values match previously published prepared evidence, or already match the new facts. Manual/conflicting edits and locality conflicts fail visibly. No price, profile claims, status, reviewed coordinates, photo/media or community facts are overwritten. Missing rows never imply closure.
+- B-BR-SYNC05: source-backed name/address refresh may update the canonical projection only if its current values match previously published prepared evidence, or already match the new facts. Curated name/address differences are preserved and explicitly counted; locality conflicts fail visibly. No price, profile claims, status, reviewed coordinates, photo/media or community facts are overwritten. Missing rows never imply closure.
 - B-BR-SYNC06: already published unchanged assertions are not republished. Successful verification accounts the full eligible membership and zero unpublished rows. New/changed facts create or update queryable station/profile projections through owning ports, with replay and failure recovery.
 - B-BR-SYNC07: the real VPS load test uses actual HTTPS alongside the bounded sync job, frozen workload/latency budgets and existing host/service guard. Only Abastevo Jobs/cron configuration/binaries may change; preserve existing API/worker/media containers and data when their executable bytes do not need replacement. Never roll an emptyDir media pod merely to refresh identical source.
 
@@ -46,7 +46,7 @@ No schema migration is needed; schema53 and existing API remain compatible.
 Tests: Go unit/race/vet plus sqlc generate/vet; real VPS PostgreSQL18.6/PostGIS
 Jobs (250m CPU/256Mi) `abastevo-rst-sync-publication-v2-20261010` and
 `abastevo-rst-sync-pipeline-20261010` passed canonical changed/reverted facts,
-unchanged no-republication, curated-conflict preservation, actual Rust preparation
+unchanged no-republication, explicit curated-conflict preservation, actual Rust preparation
 through atomic load/publication, crash-after-load resume with no refetch, changed
 read and exclusive concurrent-worker refusal. All DB tests use unique disposable
 Abastevo databases; no persistent fixture is truncated. Unit negatives cover
@@ -73,3 +73,25 @@ Container limits and a Job deadline remain hard fences. Logs contain only
 stage/outcome/time/child CPU/RSS and aggregate container peak, never child output,
 source rows or credentials. Failures preserve pending metadata and last success.
 Daily scheduling does not establish a24/48h soak result or production certification.
+
+### Live preflight correction: curated facts
+
+Read-only aggregate preflight found6 existing name and10 address differences
+against the earlier ANP publication, with0 locality differences. Rejecting the
+whole national job for these existing curated projections would block legitimate
+updates. B-BR-SYNC05 therefore records curated name/address preservation as an
+explicit `preserved_curated` count, while retaining the raw official assertion
+and publishing other rows. It never chooses another value or changes community
+facts. Locality conflict still refuses publication. The read-only daily check
+verifies all source-owned projections and separately counts preserved curated
+facts; it does not mislabel them as equal. Missing DB/manifest evidence remains
+a failure. Tests must prove this before any live mutation/job activation.
+
+The revised curated policy passed immediate PostgreSQL tests in
+`abastevo-rst-sync-curated-20261010` (actual Rust pipeline plus changed/reverted/
+curated publication), including an explicit preserved count returned by read-only
+verification. Go affected race/vet and sqlc vet passed after this correction.
+Only allowlisted numeric child counters (up to4KiB buffered output) reach logs;
+the new resource event records `preserved_curated` rather than hiding a difference.
+The initial988740b binaries were installed for a server-side CronJob dry run
+only; no live sync used that superseded refusal policy.

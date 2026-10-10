@@ -230,8 +230,10 @@ WHERE m.run_id = @run_id AND a.id > @after_id
   AND a.source = 'station-prep' AND a.latitude IS NULL AND a.longitude IS NULL
   AND a.superseded_by IS NULL AND (a.station_id IS NULL OR EXISTS (
  SELECT 1 FROM directory_stations s WHERE s.id=a.station_id AND
- (s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address
- OR s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state)))
+ (s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state
+ OR ((s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address) AND EXISTS (SELECT 1 FROM registry_assertions previous JOIN registry_source_runs r ON r.id=previous.run_id
+ WHERE previous.source='station-prep' AND previous.source_key=a.source_key AND previous.station_id=s.id
+ AND previous.display_name=s.display_name AND previous.address=s.address AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL)))))
 ORDER BY a.id LIMIT 100;
 
 -- name: SetInitialRegistryLocality :one
@@ -254,8 +256,10 @@ WHERE m.run_id = @run_id AND a.source='station-prep' AND a.municipality_code IS 
   AND a.state IS NOT NULL AND a.latitude IS NULL AND a.longitude IS NULL
   AND a.superseded_by IS NULL AND (a.station_id IS NULL OR EXISTS (
  SELECT 1 FROM directory_stations s WHERE s.id=a.station_id AND
- (s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address
- OR s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state)));
+ (s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state
+ OR ((s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address) AND EXISTS (SELECT 1 FROM registry_assertions previous JOIN registry_source_runs r ON r.id=previous.run_id
+ WHERE previous.source='station-prep' AND previous.source_key=a.source_key AND previous.station_id=s.id
+ AND previous.display_name=s.display_name AND previous.address=s.address AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL)))));
 
 -- name: RefreshPreparedStationFacts :one
 WITH refreshed AS (
@@ -265,11 +269,23 @@ WITH refreshed AS (
    AND EXISTS (
     SELECT 1 FROM registry_assertions AS previous JOIN registry_source_runs AS r ON r.id=previous.run_id
     WHERE previous.station_id=s.id AND previous.source='station-prep'
+ AND previous.source_key=(SELECT normalized_value FROM directory_identifiers WHERE station_id=s.id AND kind='CNPJ' AND valid_to IS NULL LIMIT 1)
       AND previous.display_name=s.display_name AND previous.address=s.address
       AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL
    )
  RETURNING s.id
 )
-SELECT id FROM refreshed
-UNION ALL SELECT id FROM directory_stations WHERE id= @id AND display_name= @display_name AND address= @address::jsonb
+SELECT id,false AS preserved_curated FROM refreshed
+UNION ALL SELECT id,(display_name IS DISTINCT FROM @display_name OR address IS DISTINCT FROM @address::jsonb) AS preserved_curated FROM directory_stations WHERE id= @id
 LIMIT 1;
+
+
+-- name: CountPreparedCuratedFacts :one
+SELECT count(*) FROM registry_assertions a JOIN registry_run_assertions m ON m.assertion_id=a.id
+JOIN directory_stations s ON s.id=a.station_id
+WHERE m.run_id= @run_id AND a.source='station-prep' AND a.municipality_code IS NOT NULL
+ AND a.state IS NOT NULL AND a.latitude IS NULL AND a.longitude IS NULL AND a.superseded_by IS NULL
+ AND (s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address)
+ AND NOT EXISTS (SELECT 1 FROM registry_assertions previous JOIN registry_source_runs r ON r.id=previous.run_id
+ WHERE previous.source='station-prep' AND previous.source_key=a.source_key AND previous.station_id=s.id
+ AND previous.display_name=s.display_name AND previous.address=s.address AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL);
