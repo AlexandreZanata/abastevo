@@ -32,8 +32,8 @@ pub use datasets::{
 pub use join::{join_candidates, JoinedBatch, JoinedCandidate, MatchState};
 pub use municipality::{AliasError, AliasTable, MunicipalityError};
 pub use output::{
-    emit_run, write_outputs, EmitOptions, EmittedRun, Manifest, ManifestCounts, SourceMeta,
-    ASSERTIONS_FILE, CANDIDATES_FILE, MANIFEST_FILE, PARSER_VERSION, POLICY_VERSION,
+    emit_run, emit_to_directory, write_outputs, EmitOptions, EmittedRun, Manifest, ManifestCounts,
+    SourceMeta, ASSERTIONS_FILE, CANDIDATES_FILE, MANIFEST_FILE, PARSER_VERSION, POLICY_VERSION,
     QUARANTINE_FILE,
 };
 pub use pmqc::{parse_pmqc, PmqcBatch, PmqcCandidate, PmqcError};

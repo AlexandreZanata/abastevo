@@ -1,6 +1,6 @@
 [package]
 name = "station-prep"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 rust-version = "1.99"
 description = "Offline preparation of official fuel-station records into versioned batches (RST-02 local-file parser; no network or database)"

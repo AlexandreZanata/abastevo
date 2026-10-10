@@ -1,0 +1,289 @@
+{
+  "format": "abastevo-registry-sync-acceptance-v1",
+  "source_behavior_revision": "13c7c25",
+  "source_status": "LOCAL_DONE / INTEGRATION_PENDING",
+  "scope": {
+    "namespace": "abastevo-temp",
+    "origin": "https://teste.abastevo.com.br",
+    "release_certified": false
+  },
+  "live_events": [
+    {
+      "at": "2026-10-10T21:49:56.288193122Z",
+      "child_cpu_seconds": 1.321482,
+      "child_max_rss_kib": 115608,
+      "counts": {
+        "accepted": 45617,
+        "duplicates": 0,
+        "input": 45738,
+        "quarantined": 121
+      },
+      "event": "stage_complete",
+      "ok": true,
+      "seconds": 5.302595544,
+      "stage": "prepare"
+    },
+    {
+      "at": "2026-10-10T21:51:49.798657084Z",
+      "child_cpu_seconds": 27.394638999999998,
+      "child_max_rss_kib": 14336,
+      "counts": {
+        "accepted": 45617,
+        "duplicates": 0,
+        "preserved_curated": 10,
+        "registry_assertions": 45617,
+        "rejected": 121
+      },
+      "event": "stage_complete",
+      "ok": true,
+      "seconds": 113.502476383,
+      "stage": "load_publish"
+    },
+    {
+      "at": "2026-10-10T21:51:49.804127973Z",
+      "event": "publication_complete"
+    },
+    {
+      "at": "2026-10-10T21:51:49.804284267Z",
+      "container_memory_peak_bytes": 198205440,
+      "event": "refresh_complete",
+      "seconds": 120.779623513
+    }
+  ],
+  "unchanged_events": [
+    {
+      "at": "2026-10-10T21:52:29.053633433Z",
+      "child_cpu_seconds": 0.011904999999999999,
+      "child_max_rss_kib": 14168,
+      "counts": {
+        "preserved_curated": 10,
+        "registry_assertions": 45617
+      },
+      "event": "stage_complete",
+      "ok": true,
+      "seconds": 0.701751989,
+      "stage": "verify"
+    },
+    {
+      "at": "2026-10-10T21:52:29.059425083Z",
+      "event": "unchanged_verified"
+    },
+    {
+      "at": "2026-10-10T21:52:29.063879986Z",
+      "container_memory_peak_bytes": 21700608,
+      "event": "refresh_complete",
+      "seconds": 2.871319082
+    }
+  ],
+  "guards": {
+    "live-job-guard.jsonl": {
+      "samples": 15,
+      "max_host_load1": 3.74462890625,
+      "min_available_mib": 24547.21484375,
+      "min_disk_free_mib": 240297.23046875,
+      "guard_violations": 0,
+      "max_sampled_container_mib": {
+        "abastevo-temp-api-5cdf64df7c-q9zp8/api": 8.0,
+        "abastevo-temp-api-5cdf64df7c-q9zp8/private-storage": 226.0,
+        "abastevo-temp-api-5cdf64df7c-q9zp8/worker": 3.0,
+        "abastevo-temp-db-0/postgres": 200.0
+      },
+      "shared_db_observed_delta": {
+        "wal_bytes": 61778636.0,
+        "table_bytes": 3014656.0,
+        "index_bytes": 3768320.0,
+        "dead_tuples": 3.0,
+        "checkpoints_completed": 0.0
+      },
+      "delta_scope": "shared Abastevo PostgreSQL counters; not isolated job cost"
+    },
+    "unchanged-job-guard.jsonl": {
+      "samples": 2,
+      "max_host_load1": 1.8818359375,
+      "min_available_mib": 24627.4453125,
+      "min_disk_free_mib": 240307.375,
+      "guard_violations": 0,
+      "max_sampled_container_mib": {
+        "abastevo-temp-api-5cdf64df7c-q9zp8/api": 7.0,
+        "abastevo-temp-api-5cdf64df7c-q9zp8/private-storage": 226.0,
+        "abastevo-temp-api-5cdf64df7c-q9zp8/worker": 3.0,
+        "abastevo-temp-db-0/postgres": 189.0
+      },
+      "shared_db_observed_delta": {
+        "wal_bytes": 50.0,
+        "table_bytes": 0.0,
+        "index_bytes": 0.0,
+        "dead_tuples": 0.0,
+        "checkpoints_completed": 0.0
+      },
+      "delta_scope": "shared Abastevo PostgreSQL counters; not isolated job cost"
+    },
+    "https-mixed-5/guard.jsonl": {
+      "samples": 44,
+      "max_host_load1": 3.5244140625,
+      "min_available_mib": 24557.6484375,
+      "min_disk_free_mib": 240297.046875,
+      "guard_violations": 0,
+      "max_sampled_container_mib": {
+        "abastevo-temp-api-5cdf64df7c-q9zp8/api": 8.0,
+        "abastevo-temp-api-5cdf64df7c-q9zp8/private-storage": 226.0,
+        "abastevo-temp-api-5cdf64df7c-q9zp8/worker": 3.0,
+        "abastevo-temp-db-0/postgres": 200.0
+      },
+      "shared_db_observed_delta": {
+        "wal_bytes": 63530081.0,
+        "table_bytes": 3055616.0,
+        "index_bytes": 3833856.0,
+        "dead_tuples": 3.0,
+        "checkpoints_completed": 0.0
+      },
+      "delta_scope": "shared Abastevo PostgreSQL counters; not isolated job cost"
+    },
+    "https-postdeploy-5/guard.jsonl": {
+      "samples": 42,
+      "max_host_load1": 1.83544921875,
+      "min_available_mib": 24670.94140625,
+      "min_disk_free_mib": 240219.73046875,
+      "guard_violations": 0,
+      "max_sampled_container_mib": {
+        "abastevo-temp-api-5cdf64df7c-q9zp8/api": 7.0,
+        "abastevo-temp-api-5cdf64df7c-q9zp8/private-storage": 226.0,
+        "abastevo-temp-api-5cdf64df7c-q9zp8/worker": 3.0,
+        "abastevo-temp-db-0/postgres": 194.0
+      },
+      "shared_db_observed_delta": {
+        "wal_bytes": 26871.0,
+        "table_bytes": 0.0,
+        "index_bytes": 0.0,
+        "dead_tuples": 4.0,
+        "checkpoints_completed": 1.0
+      },
+      "delta_scope": "shared Abastevo PostgreSQL counters; not isolated job cost"
+    }
+  },
+  "state": {
+    "version": 1,
+    "success": {
+      "key": "6380acf87dbc873bf358a3ee30e323d8d3438d2ddcd5622d6b81fc0bc159bf1b",
+      "fingerprint": "cab464720829d75b4a9e8d9f5aef5c28bf2fb8ef18a14767c9664b2927a4553e",
+      "source_hash": "35101dee91a7a6398043a67d478e60f2b0e0776e5e53436ba80517d9db0c2e8e",
+      "alias_hash": "ad659182c9fbef2c1a9d61f95beb92e6fcbcb7dbc780403cd74bf95c01415c33",
+      "run_id": "6380acf8-7dbc-573b-b358-a3ee30e323d8",
+      "fetched_at": "2026-10-10T21:49:50.923426705Z",
+      "manifest_hash": "f9a3e63fa4c7516cdfa767e7f84fd453ff395b8843b791922e8eb5157870cac7"
+    },
+    "checked_at": "2026-10-10T21:52:29.053727344Z",
+    "retained_file_bytes": 54031940
+  },
+  "application_binary_switch": {
+    "api": {
+      "previous_sha256": "a54683790b4c23da98f93a73556ddd2ace43a12566535c042d3435af867183cc",
+      "new_sha256": "736f9540c0240f9c35c92ca81d7c76ff046f29a4e3cfda178f83718ee4d054d2",
+      "revision": "13c7c25"
+    },
+    "worker": {
+      "previous_sha256": "eb48981c31474b04d210de21ef2855101c1f6bc6e99207f042a58a62c44f425d",
+      "new_sha256": "75c340e4e70d49adc85f8f86a0cc396c7cf86a47002ac7221d09c0259607ffca",
+      "revision": "13c7c25"
+    }
+  },
+  "post_application_deploy": {
+    "available_mib": 24685.50390625,
+    "containers": {
+      "abastevo-temp-api-5cdf64df7c-q9zp8/api": {
+        "cpu": "91m",
+        "memory_limit_mib": 1024,
+        "memory_mib": 7.0,
+        "oom": false,
+        "ready": true,
+        "restarts": 1
+      },
+      "abastevo-temp-api-5cdf64df7c-q9zp8/private-storage": {
+        "cpu": "13m",
+        "memory_limit_mib": 1024,
+        "memory_mib": 226.0,
+        "oom": false,
+        "ready": true,
+        "restarts": 0
+      },
+      "abastevo-temp-api-5cdf64df7c-q9zp8/worker": {
+        "cpu": "1m",
+        "memory_limit_mib": 512,
+        "memory_mib": 2.0,
+        "oom": false,
+        "ready": true,
+        "restarts": 1
+      },
+      "abastevo-temp-db-0/postgres": {
+        "cpu": "331m",
+        "memory_limit_mib": 1024,
+        "memory_mib": 191.0,
+        "oom": false,
+        "ready": true,
+        "restarts": 0
+      }
+    },
+    "db": {
+      "active": 1,
+      "assertions": 70169,
+      "checkpoint_stats_reset": "2026-10-05 12:04:57.512022+00",
+      "checkpoints_completed": 247,
+      "dead_tuples": 4494,
+      "index_bytes": 45932544,
+      "run_backlog": 0,
+      "stations": 45618,
+      "table_bytes": 71786496,
+      "waiting": 0,
+      "wal_bytes": "2737074151",
+      "wal_stats_reset": "2026-10-05 12:04:57.512022+00"
+    },
+    "disk_free_mib": 240220.6484375,
+    "host_cpus": 8,
+    "load1": 1.7197265625
+  },
+  "cadence": {
+    "name": "abastevo-registry-sync",
+    "namespace": "abastevo-temp",
+    "schedule": "0 3 * * *",
+    "time_zone": "America/Cuiaba",
+    "suspended": false,
+    "concurrency": "Forbid",
+    "job_deadline_seconds": 1200,
+    "resources": {
+      "limits": {
+        "cpu": "250m",
+        "memory": "256Mi"
+      },
+      "requests": {
+        "cpu": "25m",
+        "memory": "32Mi"
+      }
+    },
+    "tools_path": "/opt/abastevo-temp/registry-sync/releases/13c7c25",
+    "runtime_image": "postgis/postgis:18-3.6@sha256:60f6ad1d21ea86a67d47780b9a0d1e1d200500f62b19293fa834d0dea80b8677",
+    "last_schedule_time": null,
+    "verified_at": "2026-10-10T22:05:42.440967+00:00"
+  },
+  "limits": {
+    "daily_cpu_millicores": 250,
+    "daily_memory_mib": 256,
+    "daily_deadline_seconds": 1200,
+    "idle_refresh_processes": 0
+  },
+  "community_integration_cases": 15,
+  "limitations": [
+    "Two separate bounded HTTPS windows, one with partial ingestion overlap; not five matched trials or 24/48h acceptance.",
+    "p99 and maximum users unqualified.",
+    "MinIO global hash varied; no individual-photo integrity acceptance. Same pod/volume and storage restart0 confirmed.",
+    "CPU values in worker events cover children only; source download/DB/supervisor costs not isolated.",
+    "No reviewed coordinates or missing-row closure inferred."
+  ],
+  "final_accounting": {
+    "stations": 45618,
+    "profiles": 45617,
+    "missing_profiles": 1,
+    "prepared_stations": 45617,
+    "prepared_stations_without_profile": 0,
+    "assertions": 70169
+  }
+}

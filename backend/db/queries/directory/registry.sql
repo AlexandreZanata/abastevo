@@ -53,7 +53,8 @@ SELECT id, run_id, source, source_key, checksum, display_name, address,
     location_quality, source_reference, latitude, longitude, crs,
     station_id
 FROM registry_assertions
-WHERE run_id = @run_id
+WHERE registry_assertions.run_id = @run_id OR EXISTS (SELECT 1 FROM registry_run_assertions AS m
+    WHERE m.run_id = @run_id AND m.assertion_id = registry_assertions.id)
 ORDER BY source_key, checksum;
 
 -- name: SetAssertionStation :execrows
@@ -172,3 +173,119 @@ FROM station_suggestions
 WHERE state = 'pending'
 ORDER BY created_at ASC
 LIMIT @page_limit::int;
+
+-- name: BindPreparedManifest :one
+UPDATE registry_source_runs SET prepared_manifest_sha256 = @manifest_sha256
+WHERE id = @id AND checksum = @checksum
+  AND (prepared_manifest_sha256 = '' OR prepared_manifest_sha256 = @manifest_sha256)
+RETURNING id;
+
+-- name: ResumePreparedRun :execrows
+UPDATE registry_source_runs SET state = 'running', accepted = 0, duplicates = 0,
+    rejected = 0, error_code = '', finished_at = NULL
+WHERE id = @id AND source = 'station-prep' AND state IN ('failed', 'running');
+
+-- name: AttachPreparedAssertion :one
+INSERT INTO registry_run_assertions (run_id, assertion_id, supersedes_checksum)
+SELECT @run_id, a.id, @supersedes_checksum FROM registry_assertions a
+WHERE a.source = 'station-prep' AND a.source_key = @source_key AND a.checksum = @checksum
+ON CONFLICT (run_id, assertion_id) DO NOTHING
+RETURNING assertion_id;
+
+-- name: GetPreparedMembership :one
+SELECT m.assertion_id FROM registry_run_assertions m
+JOIN registry_assertions a ON a.id=m.assertion_id
+WHERE m.run_id = @run_id AND a.source='station-prep' AND a.source_key = @source_key
+ AND a.checksum = @checksum AND m.supersedes_checksum = @supersedes_checksum;
+
+-- name: PreparedDanglingSupersedes :one
+SELECT count(*) FROM registry_run_assertions m
+JOIN registry_assertions older ON older.id = m.assertion_id
+WHERE m.run_id = @run_id AND m.supersedes_checksum <> '' AND NOT EXISTS (
+ SELECT 1 FROM registry_run_assertions newer_membership
+ JOIN registry_assertions newer ON newer.id = newer_membership.assertion_id
+ WHERE newer_membership.run_id = m.run_id AND newer.source_key = older.source_key
+   AND newer.checksum = m.supersedes_checksum
+   AND newer.id <> older.id
+   AND (older.superseded_by IS NULL OR older.superseded_by = newer.id)
+);
+
+-- name: LinkPreparedSupersedes :execrows
+UPDATE registry_assertions older SET superseded_by = newer.id
+FROM registry_run_assertions m, registry_assertions newer, registry_run_assertions n
+WHERE m.run_id = @run_id AND m.assertion_id = older.id
+  AND m.supersedes_checksum <> '' AND newer.checksum = m.supersedes_checksum
+  AND newer.source_key = older.source_key AND n.run_id = m.run_id AND n.assertion_id = newer.id
+  AND older.superseded_by IS NULL AND older.id <> newer.id;
+
+-- name: GetPreparedRunBinding :one
+SELECT prepared_manifest_sha256 FROM registry_source_runs
+WHERE id = @id AND source = 'station-prep' AND state = 'complete';
+
+-- name: ListPreparedRegistryPage :many
+SELECT a.id, a.source_key, a.display_name, a.address, a.municipality_code, a.state
+FROM registry_assertions a JOIN registry_run_assertions m ON m.assertion_id = a.id
+WHERE m.run_id = @run_id AND a.id > @after_id
+  AND a.municipality_code IS NOT NULL AND a.state IS NOT NULL
+  AND a.source = 'station-prep' AND a.latitude IS NULL AND a.longitude IS NULL
+  AND a.superseded_by IS NULL AND (a.station_id IS NULL OR EXISTS (
+ SELECT 1 FROM directory_stations s WHERE s.id=a.station_id AND
+ (s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state
+ OR ((s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address) AND EXISTS (SELECT 1 FROM registry_assertions previous JOIN registry_source_runs r ON r.id=previous.run_id
+ WHERE previous.source='station-prep' AND previous.source_key=a.source_key AND previous.station_id=s.id
+ AND previous.display_name=s.display_name AND previous.address=s.address AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL)))))
+ORDER BY a.id LIMIT 100;
+
+-- name: SetInitialRegistryLocality :one
+UPDATE directory_stations
+SET municipality_code = COALESCE(municipality_code, @municipality_code),
+    state = COALESCE(state, @state)
+WHERE id = @id
+  AND (municipality_code IS NULL OR municipality_code = @municipality_code)
+  AND (state IS NULL OR state = @state)
+RETURNING id;
+
+-- name: CountPreparedPublicationRows :one
+SELECT count(*) FROM registry_assertions a JOIN registry_run_assertions m ON m.assertion_id=a.id
+WHERE m.run_id = @run_id AND a.source='station-prep' AND a.municipality_code IS NOT NULL
+  AND a.state IS NOT NULL AND a.latitude IS NULL AND a.longitude IS NULL AND a.superseded_by IS NULL;
+
+-- name: CountUnpublishedPreparedRows :one
+SELECT count(*) FROM registry_assertions a JOIN registry_run_assertions m ON m.assertion_id=a.id
+WHERE m.run_id = @run_id AND a.source='station-prep' AND a.municipality_code IS NOT NULL
+  AND a.state IS NOT NULL AND a.latitude IS NULL AND a.longitude IS NULL
+  AND a.superseded_by IS NULL AND (a.station_id IS NULL OR EXISTS (
+ SELECT 1 FROM directory_stations s WHERE s.id=a.station_id AND
+ (s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state
+ OR ((s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address) AND EXISTS (SELECT 1 FROM registry_assertions previous JOIN registry_source_runs r ON r.id=previous.run_id
+ WHERE previous.source='station-prep' AND previous.source_key=a.source_key AND previous.station_id=s.id
+ AND previous.display_name=s.display_name AND previous.address=s.address AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL)))));
+
+-- name: RefreshPreparedStationFacts :one
+WITH refreshed AS (
+ UPDATE directory_stations AS s
+ SET display_name= @display_name, address= @address::jsonb
+ WHERE s.id= @id AND (s.display_name IS DISTINCT FROM @display_name OR s.address IS DISTINCT FROM @address::jsonb)
+   AND EXISTS (
+    SELECT 1 FROM registry_assertions AS previous JOIN registry_source_runs AS r ON r.id=previous.run_id
+    WHERE previous.station_id=s.id AND previous.source='station-prep'
+ AND previous.source_key=(SELECT normalized_value FROM directory_identifiers WHERE station_id=s.id AND kind='CNPJ' AND valid_to IS NULL LIMIT 1)
+      AND previous.display_name=s.display_name AND previous.address=s.address
+      AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL
+   )
+ RETURNING s.id
+)
+SELECT id,false AS preserved_curated FROM refreshed
+UNION ALL SELECT id,(display_name IS DISTINCT FROM @display_name OR address IS DISTINCT FROM @address::jsonb) AS preserved_curated FROM directory_stations WHERE id= @id
+LIMIT 1;
+
+
+-- name: CountPreparedCuratedFacts :one
+SELECT count(*) FROM registry_assertions a JOIN registry_run_assertions m ON m.assertion_id=a.id
+JOIN directory_stations s ON s.id=a.station_id
+WHERE m.run_id= @run_id AND a.source='station-prep' AND a.municipality_code IS NOT NULL
+ AND a.state IS NOT NULL AND a.latitude IS NULL AND a.longitude IS NULL AND a.superseded_by IS NULL
+ AND (s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address)
+ AND NOT EXISTS (SELECT 1 FROM registry_assertions previous JOIN registry_source_runs r ON r.id=previous.run_id
+ WHERE previous.source='station-prep' AND previous.source_key=a.source_key AND previous.station_id=s.id
+ AND previous.display_name=s.display_name AND previous.address=s.address AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL);

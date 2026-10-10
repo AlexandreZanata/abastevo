@@ -1,6 +1,6 @@
 # anpfuel backend images.
 #
-# One pinned builder compiles all three process roles (api, worker, migrate)
+# One pinned builder compiles all four process roles (api, worker, migrate, station-load)
 # from the same base layers; each target ships only its static binary on a
 # non-root distroless runtime with no shell. Same revision label across roles
 # is the release provenance. Secrets travel at runtime (env), never in layers.
@@ -22,7 +22,8 @@ COPY backend/internal ./internal
 COPY backend/db ./db
 RUN go build -trimpath -ldflags="-s -w" -o /out/api ./cmd/api \
  && go build -trimpath -ldflags="-s -w" -o /out/worker ./cmd/worker \
- && go build -trimpath -ldflags="-s -w" -o /out/migrate ./cmd/migrate
+ && go build -trimpath -ldflags="-s -w" -o /out/migrate ./cmd/migrate \
+ && go build -trimpath -ldflags="-s -w" -o /out/station-load ./cmd/station-load
 
 FROM ${RUNTIME_IMAGE} AS api
 ARG REVISION
@@ -48,3 +49,11 @@ LABEL org.opencontainers.image.title="anpfuel-migrate" \
 COPY --from=builder --chown=65532:65532 /out/migrate /migrate
 USER 65532:65532
 ENTRYPOINT ["/migrate"]
+
+FROM ${RUNTIME_IMAGE} AS station-load
+ARG REVISION
+LABEL org.opencontainers.image.title="anpfuel-station-load" \
+      org.opencontainers.image.revision="${REVISION}"
+COPY --from=builder --chown=65532:65532 /out/station-load /station-load
+USER 65532:65532
+ENTRYPOINT ["/station-load"]

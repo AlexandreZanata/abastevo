@@ -1,0 +1,56 @@
+{
+  "format_version": "station-batch-v1",
+  "run_id": "6380acf8-7dbc-573b-b358-a3ee30e323d8",
+  "parser_version": "station-prep-v0.3.0",
+  "policy_version": "station-policy-v2",
+  "municipality_reference": {
+    "reference": "ibge-localidades-frozen",
+    "reference_hash": "ad659182c9fbef2c1a9d61f95beb92e6fcbcb7dbc780403cd74bf95c01415c33"
+  },
+  "started_at": "2026-10-10T21:49:50.923426705Z",
+  "ended_at": "2026-10-10T21:49:50.923426705Z",
+  "inputs": [
+    {
+      "key": "registry-13col",
+      "reference": "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/arquivos/arquivos-dados-cadastrais-dos-revendedores-varejistas-de-combustiveis-automotivos/dados-cadastrais-revendedores-varejistas-combustiveis-automoveis.csv",
+      "edition": "content-sha256:35101dee91a7a6398043a67d478e60f2b0e0776e5e53436ba80517d9db0c2e8e",
+      "edition_seq": 1,
+      "sha256": "35101dee91a7a6398043a67d478e60f2b0e0776e5e53436ba80517d9db0c2e8e",
+      "bytes": 7890947,
+      "rows": 45738,
+      "encoding": "UTF-8 without BOM"
+    }
+  ],
+  "counts": {
+    "registry-13col": {
+      "input": 45738,
+      "accepted": 45617,
+      "duplicates": 0,
+      "quarantined": 121
+    }
+  },
+  "completeness": {
+    "eof_validated": true,
+    "expected_manifest": true
+  },
+  "outputs": [
+    {
+      "path": "assertions.jsonl",
+      "sha256": "1fe52a843218252681e3fd69f7692a661993d1bd291ff02dffb1ccd97167c2a8",
+      "bytes": 43328274,
+      "rows": 45617
+    },
+    {
+      "path": "candidates.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "rows": 0
+    },
+    {
+      "path": "quarantine.jsonl",
+      "sha256": "8f65b75478de1ee44a88786fa68dbd9d93cebfe3bee28db115b37249208c0a62",
+      "bytes": 27239,
+      "rows": 121
+    }
+  ]
+}

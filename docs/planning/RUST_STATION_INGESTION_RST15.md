@@ -1,5 +1,7 @@
 # RST-15 — City search, pagination and traffic distribution
 
+> 2026-10-10 correction: the layer previously called API executes the Go Reader directly. It excludes HTTP, TLS, edge, decoding and network. Code now labels it Reader. The small diagnostic samples below are exploratory, not qualified tail/capacity claims; new real HTTPS evidence is separate.
+
 Status: MEASURED — isolated disposable PostGIS only; no migration, no
 product change, one candidate index measured and dropped. Date:
 2026-10-09. Scope: `RUST_STATION_BENCHMARK_PLAN.md` RST-15,

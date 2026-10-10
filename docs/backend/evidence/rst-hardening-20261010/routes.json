@@ -1,0 +1,47 @@
+[
+  {
+    "name": "city_dense",
+    "path": "/v1/stations?state=SP&municipality_code=3550308&limit=20",
+    "required": "items"
+  },
+  {
+    "name": "city_dense",
+    "path": "/v1/stations?state=SP&municipality_code=3550308&limit=20",
+    "required": "items"
+  },
+  {
+    "name": "city_dense",
+    "path": "/v1/stations?state=SP&municipality_code=3550308&limit=20",
+    "required": "items"
+  },
+  {
+    "name": "city_sorriso",
+    "path": "/v1/stations?state=MT&municipality_code=5107925&limit=20",
+    "required": "items"
+  },
+  {
+    "name": "city_sparse",
+    "path": "/v1/stations?state=AC&municipality_code=1200054&limit=20",
+    "required": "items"
+  },
+  {
+    "name": "city_empty",
+    "path": "/v1/stations?state=RO&municipality_code=1100098&limit=20",
+    "required": "items"
+  },
+  {
+    "name": "text_national",
+    "path": "/v1/stations?q=POSTO&limit=20",
+    "required": "items"
+  },
+  {
+    "name": "detail",
+    "path": "/v1/stations/2a912258-2017-81df-329c-98b04947c710",
+    "required": "station_id"
+  },
+  {
+    "name": "profile",
+    "path": "/v1/stations/2a912258-2017-81df-329c-98b04947c710/profile",
+    "required": "station_id"
+  }
+]

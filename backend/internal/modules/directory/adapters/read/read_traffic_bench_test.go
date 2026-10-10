@@ -136,11 +136,11 @@ func trafficSeed(tb testing.TB, pool *pgxpool.Pool, n int) (dense, sparse, known
 type trafficWorkload struct {
 	name    string
 	stratum string
-	// Page limit at the API layer; raw queries run limit+1, so the API
+	// Page limit at the in-process Reader layer; raw queries run limit+1, so the Reader
 	// row count must equal min(raw rows, limit).
-	limit int
-	raw   func(ctx context.Context, q *directory.Queries) (int, error)
-	api   func(ctx context.Context, r *Reader) (int, error)
+	limit  int
+	raw    func(ctx context.Context, q *directory.Queries) (int, error)
+	reader func(ctx context.Context, r *Reader) (int, error)
 }
 
 func trafficWorkloads(dense, sparse, knownID string) []trafficWorkload {
@@ -422,7 +422,7 @@ func TestTrafficNegative(t *testing.T) {
 	}
 }
 
-func TestTrafficRawVsAPI(t *testing.T) {
+func TestTrafficRawVsReader(t *testing.T) {
 	pool, _ := trafficFreshDB(t)
 	dense, sparse, knownID := trafficSeed(t, pool, 2000)
 	reader := NewReader(pool)
@@ -430,12 +430,12 @@ func TestTrafficRawVsAPI(t *testing.T) {
 	queries := directory.New(pool)
 	for _, workload := range trafficWorkloads(dense, sparse, knownID) {
 		rawRows, rawErr := workload.raw(ctx, queries)
-		apiRows, apiErr := workload.api(ctx, reader)
-		if (rawErr == nil) != (apiErr == nil) {
-			t.Fatalf("%s raw err %v vs api err %v", workload.name, rawErr, apiErr)
+		readerRows, readerErr := workload.reader(ctx, reader)
+		if (rawErr == nil) != (readerErr == nil) {
+			t.Fatalf("%s raw err %v vs Reader err %v", workload.name, rawErr, readerErr)
 		}
-		if want := min(rawRows, workload.limit); apiRows != want {
-			t.Fatalf("%s api rows %d, want min(raw %d, limit %d)", workload.name, apiRows, rawRows, workload.limit)
+		if want := min(rawRows, workload.limit); readerRows != want {
+			t.Fatalf("%s Reader rows %d, want min(raw %d, limit %d)", workload.name, readerRows, rawRows, workload.limit)
 		}
 	}
 }
@@ -557,16 +557,16 @@ func BenchmarkTrafficLayers(b *testing.B) {
 			_, err := workload.raw(ctx, queries)
 			return err
 		}
-		apiFn := func(ctx context.Context) error {
-			_, err := workload.api(ctx, reader)
+		readerFn := func(ctx context.Context) error {
+			_, err := workload.reader(ctx, reader)
 			return err
 		}
 		trafficWarmup(ctx, 20, rawFn)
 		lat, errs := trafficSample(ctx, 50, rawFn)
 		trafficReport(b, "raw", workload.name, workload.stratum, lat, errs, 50, 0)
-		trafficWarmup(ctx, 20, apiFn)
-		lat, errs = trafficSample(ctx, 50, apiFn)
-		trafficReport(b, "api", workload.name, workload.stratum, lat, errs, 50, 0)
+		trafficWarmup(ctx, 20, readerFn)
+		lat, errs = trafficSample(ctx, 50, readerFn)
+		trafficReport(b, "reader", workload.name, workload.stratum, lat, errs, 50, 0)
 	}
 	var table, indexes int64
 	if err := pool.QueryRow(ctx, `SELECT pg_total_relation_size('directory_stations')`).Scan(&table); err != nil {
@@ -949,7 +949,7 @@ func BenchmarkTrafficWeighted(b *testing.B) {
 	for name, weight := range weights {
 		workload := byName[name]
 		fn := func(ctx context.Context) error {
-			_, err := workload.api(ctx, reader)
+			_, err := workload.reader(ctx, reader)
 			return err
 		}
 		trafficWarmup(ctx, 5, fn)

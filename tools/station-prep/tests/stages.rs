@@ -288,3 +288,74 @@ fn spill_forced_emit_matches_in_memory_bytes() {
     assert!(leftovers.is_empty(), "spill runs cleaned: {leftovers:?}");
     std::fs::remove_dir_all(&dir).ok();
 }
+
+#[test]
+fn bounded_file_emission_matches_legacy_bytes_and_refuses_overwrite() {
+    let generated = generate(&profile(3000, 42));
+    let dir = scratch("bounded");
+    let first = run_pipeline(&generated.csv, &generated.aliases_json, usize::MAX, &dir);
+    let out = dir.join("published");
+    let manifest = station_prep::emit_to_directory(
+        Some((&first.meta, &first.batch)),
+        None,
+        "probe-aliases",
+        &first.digest,
+        &options(7),
+        &out,
+    )
+    .expect("bounded emission");
+    for (name, expected) in [
+        (station_prep::ASSERTIONS_FILE, &first.emitted.assertions),
+        (station_prep::CANDIDATES_FILE, &first.emitted.candidates),
+        (station_prep::QUARANTINE_FILE, &first.emitted.quarantine),
+    ] {
+        assert_eq!(&std::fs::read(out.join(name)).unwrap(), expected);
+    }
+    assert_eq!(manifest.to_json(), first.emitted.manifest_json());
+    assert!(station_prep::emit_to_directory(
+        Some((&first.meta, &first.batch)),
+        None,
+        "probe-aliases",
+        &first.digest,
+        &options(7),
+        &out,
+    )
+    .is_err());
+    assert_eq!(
+        std::fs::read(out.join(station_prep::ASSERTIONS_FILE)).unwrap(),
+        first.emitted.assertions
+    );
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn bounded_emission_failure_removes_only_its_unpublished_files() {
+    let generated = generate(&profile(300, 43));
+    let dir = scratch("bounded-failure");
+    let mut pipeline = run_pipeline(&generated.csv, &generated.aliases_json, usize::MAX, &dir);
+    pipeline
+        .batch
+        .accepted
+        .last_mut()
+        .unwrap()
+        .business_name_normalized = "X".repeat(1 << 20);
+    let unrelated = dir.join("keep.txt");
+    std::fs::write(&unrelated, "retained").unwrap();
+    let result = station_prep::emit_to_directory(
+        Some((&pipeline.meta, &pipeline.batch)),
+        None,
+        "probe-aliases",
+        &pipeline.digest,
+        &options(7),
+        &dir.join("published"),
+    );
+    assert!(result.is_err());
+    assert!(!dir.join("published").exists());
+    assert_eq!(std::fs::read_to_string(unrelated).unwrap(), "retained");
+    assert_eq!(
+        std::fs::read_dir(&dir).unwrap().count(),
+        1,
+        "partial spill/output cleanup"
+    );
+    std::fs::remove_dir_all(dir).unwrap();
+}

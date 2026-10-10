@@ -1,0 +1,50 @@
+# Executed dated Abastevo snapshot record; review admission, files and unique ownership before any replay.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: abastevo-rst-portable-prepare-20261010
+  namespace: abastevo-temp
+  labels:
+    app: abastevo-rst-hardening
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 180
+  template:
+    metadata:
+      labels:
+        app: abastevo-rst-hardening
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext: {runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000}
+      containers:
+        - name: metrics
+          image: postgis/postgis:18-3.6@sha256:60f6ad1d21ea86a67d47780b9a0d1e1d200500f62b19293fa834d0dea80b8677
+          imagePullPolicy: Never
+          command: ["/bench/rst-vps-prepare-driver"]
+          args: ["/bench/prepare_registry", "/bench/official/registry.csv", "/bench/official/aliases.json", "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/arquivos/arquivos-dados-cadastrais-dos-revendedores-varejistas-de-combustiveis-automotivos/dados-cadastrais-revendedores-varejistas-combustiveis-automoveis.csv", "ANP-page-updated-2026-10-09", "8b1aba98-2bb9-5666-a038-cfc739bddafe", "2026-10-10T14:22:08.353372+00:00", "/bench/official/prepared-portable/manifest.json"]
+          env:
+            - name: GOMAXPROCS
+              value: "1"
+            - name: GOMEMLIMIT
+              value: "192MiB"
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 250m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: work
+              mountPath: /work
+            - name: bench
+              mountPath: /bench
+              readOnly: true
+      volumes:
+        - name: work
+          emptyDir: {sizeLimit: 160Mi}
+        - name: bench
+          hostPath:
+            path: /opt/abastevo-temp/bench/rst-hardening-20261010
+            type: Directory

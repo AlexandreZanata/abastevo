@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -84,6 +85,10 @@ func freshStore(t *testing.T) *PGStore {
 // freshStoreWithDSN is freshStore plus the disposable database DSN for
 // tests that need raw connections (least-privilege role setup).
 func freshStoreWithDSN(t *testing.T) (*PGStore, string) {
+	return freshStoreWithMigrations(t, dbmigrations.Files)
+}
+
+func freshStoreWithMigrations(t *testing.T, files fs.FS) (*PGStore, string) {
 	t.Helper()
 	adminDSN := testDSN(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -115,7 +120,7 @@ func freshStoreWithDSN(t *testing.T) (*PGStore, string) {
 		t.Fatalf("parse dsn: %v", err)
 	}
 	parsed.Path = "/" + name
-	if _, err := migrate.Apply(ctx, parsed.String(), dbmigrations.Files); err != nil {
+	if _, err := migrate.Apply(ctx, parsed.String(), files); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	pool, err := pgxpool.New(ctx, parsed.String())

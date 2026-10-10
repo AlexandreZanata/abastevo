@@ -4,7 +4,7 @@ package read
 
 // RST-18 mixed reads, ingestion contention and sustainable capacity.
 // Reads run open arrival (5/20/50/100 rps ladder plus refinement) over
-// the exact app path while bounded importer workers stage disjoint
+// the Go Reader directly (no HTTP) while bounded importer workers stage disjoint
 // full editions through the owned Go loader on the same pool and
 // database. Identical dataset, workload mix and pool configuration in
 // every cell; fresh disposable database per cell.
@@ -239,6 +239,7 @@ type capacitySample struct {
 	waiting   int64
 	waitEvent string
 	backlog   int64
+	err       error
 }
 
 func capacityWatch(ctx context.Context, pool *pgxpool.Pool, out *[]capacitySample, mu *sync.Mutex, stop <-chan struct{}, wg *sync.WaitGroup) {
@@ -250,18 +251,15 @@ func capacityWatch(ctx context.Context, pool *pgxpool.Pool, out *[]capacitySampl
 		case <-stop:
 			return
 		case <-ticker.C:
-			var waiting int64
-			var event string
-			_ = pool.QueryRow(ctx, `SELECT count(*), COALESCE(mode(), '') FROM (
-				SELECT wait_event_type || ':' || COALESCE(wait_event, '') AS mode
-				FROM pg_stat_activity WHERE wait_event IS NOT NULL AND backend_type = 'client backend'
-			) w GROUP BY 1=1`).Scan(&waiting, &event)
-			var backlog int64
-			_ = pool.QueryRow(ctx, `SELECT count(*) FROM registry_source_runs
-				WHERE state NOT IN ('complete','failed')`).Scan(&backlog)
+			sampleCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+			waiting, event, backlog, err := capacityContention(sampleCtx, pool)
+			cancel()
 			mu.Lock()
-			*out = append(*out, capacitySample{waiting: waiting, waitEvent: event, backlog: backlog})
+			*out = append(*out, capacitySample{waiting: waiting, waitEvent: event, backlog: backlog, err: err})
 			mu.Unlock()
+			if err != nil {
+				return
+			}
 		}
 	}
 }
@@ -301,10 +299,10 @@ func capacityCell(b *testing.B, editions []capacityEdition, rate float64, worker
 	if err := pool.QueryRow(ctx, "SELECT pg_current_wal_lsn()::text").Scan(&walBefore); err != nil {
 		b.Fatal(err)
 	}
-	var checkBefore int64
-	_ = pool.QueryRow(ctx, `SELECT COALESCE((SELECT SUM(checkpoints_timed + checkpoints_req)
-		FROM pg_stat_checkpointer), (SELECT SUM(checkpoints_timed + checkpoints_req)
-		FROM pg_stat_bgwriter))`).Scan(&checkBefore)
+	checkBefore, err := completedCheckpointCount(ctx, pool)
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	stop := make(chan struct{})
 	var wg sync.WaitGroup
@@ -322,11 +320,20 @@ func capacityCell(b *testing.B, editions []capacityEdition, rate float64, worker
 	var importErrs atomic.Int64
 	var importsDone atomic.Int64
 	var importWg sync.WaitGroup
+	importStarted := time.Now()
+	var importFinished time.Time
 	if workers > 0 {
 		for w := 0; w < workers; w++ {
 			importWg.Add(1)
 			go func() {
 				defer importWg.Done()
+				defer func() {
+					importMu.Lock()
+					defer importMu.Unlock()
+					if now := time.Now(); now.After(importFinished) {
+						importFinished = now
+					}
+				}()
 				for {
 					n := int(claim.Add(1)) - 1
 					if n >= len(editions) {
@@ -380,6 +387,9 @@ func capacityCell(b *testing.B, editions []capacityEdition, rate float64, worker
 	var event string
 	var firstBacklog, lastBacklog int64
 	for i, sample := range samples {
+		if sample.err != nil {
+			b.Fatalf("capacity telemetry unavailable: %v", sample.err)
+		}
 		if sample.waiting > maxWaiting {
 			maxWaiting = sample.waiting
 			event = sample.waitEvent
@@ -407,22 +417,25 @@ func capacityCell(b *testing.B, editions []capacityEdition, rate float64, worker
 		b.Fatal(err)
 	}
 	result.walMiB = float64(walBytes) / 1048576
-	_ = pool.QueryRow(ctx, `SELECT COALESCE(SUM(n_dead_tup),0) FROM pg_stat_user_tables
-		WHERE relname IN ('registry_source_runs','registry_assertions','directory_stations')`).Scan(&result.deadTup)
-	var checkAfter int64
-	_ = pool.QueryRow(ctx, `SELECT COALESCE((SELECT SUM(checkpoints_timed + checkpoints_req)
-		FROM pg_stat_checkpointer), (SELECT SUM(checkpoints_timed + checkpoints_req)
-		FROM pg_stat_bgwriter))`).Scan(&checkAfter)
+	if err := pool.QueryRow(ctx, `SELECT COALESCE(SUM(n_dead_tup),0) FROM pg_stat_user_tables
+ WHERE relname IN ('registry_source_runs','registry_assertions','directory_stations')`).Scan(&result.deadTup); err != nil {
+		b.Fatal(err)
+	}
+	checkAfter, err := completedCheckpointCount(ctx, pool)
+	if err != nil {
+		b.Fatal(err)
+	}
+	if checkAfter < checkBefore {
+		b.Fatal("checkpoint statistics reset during observation")
+	}
 	result.checkpoints = checkAfter - checkBefore
-
 	if len(importLat) > 0 {
 		sort.Float64s(importLat)
 		result.importMaxMS = importLat[len(importLat)-1]
-		total := 0.0
-		for _, ms := range importLat {
-			total += ms
+		result.importThroughput, err = aggregateImportRate(importLat, importFinished.Sub(importStarted))
+		if err != nil {
+			b.Fatal(err)
 		}
-		result.importThroughput = float64(len(importLat)) / (total / 1000)
 	}
 	result.importsDone = int(importsDone.Load())
 	result.importErrs = int(importErrs.Load())

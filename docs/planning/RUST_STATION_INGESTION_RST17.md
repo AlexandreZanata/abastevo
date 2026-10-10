@@ -1,5 +1,7 @@
 # RST-17 — Physical design and partitioning comparison
 
+> 2026-10-10 correction: UF-LIST and BRIN remain exploratory hypotheses. Three short lab trials on synthetic assertions do not accept deployment or an operational partition strategy. Keep the current layout; require repeated representative mixed-load/cost/maintenance measurements before a separate adoption migration.
+
 Status: DECIDED — lab-only DDL on disposable PostGIS; no migration,
 no product change, no production migration. Date: 2026-10-09. Scope:
 `RUST_STATION_BENCHMARK_PLAN.md` RST-17 over the RST-15/16

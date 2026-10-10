@@ -535,7 +535,7 @@ func BenchmarkSpatialDiscovery(b *testing.B) {
 				b.Fatalf("explain: %v", err)
 			}
 			node, candidates, results, buffers, execMS := spatialExplain(plan)
-			// Raw layer agreement on counts keeps the API timing honest.
+			// Raw layer agreement checks the in-process Reader measurement (no HTTP).
 			raw, err := queries.NearbyStations(ctx, directory.NearbyStationsParams{
 				Lon: site.lon, Lat: site.lat, RadiusM: int32(radius), LimitPlusOne: 21,
 			})

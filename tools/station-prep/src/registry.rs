@@ -69,7 +69,44 @@ fn collapse_whitespace(raw: &str) -> String {
 /// changes every checksum, so the golden test in `tests/deltas.rs` pins
 /// one production-shaped vector.
 fn row_checksum(fields: &[&str]) -> String {
-    sha256_hex(fields.join("\x1f").as_bytes())
+    sha256_hex(format!("station-assertion-v2\x1f{}", fields.join("\x1f")).as_bytes())
+}
+
+// Strict calendar parsing without locale guesses. The official CSV uses
+// DD/MM/YYYY; older synthetic fixtures use ISO. Brand linkage is independent.
+fn normalize_calendar_date(raw: &str) -> Result<String, &'static str> {
+    if raw.is_empty() {
+        return Ok(String::new());
+    }
+    let bytes = raw.as_bytes();
+    if bytes.len() != 10 || !raw.is_ascii() {
+        return Err("expected DD/MM/YYYY or YYYY-MM-DD");
+    }
+    let parts = if bytes[2] == b'/' && bytes[5] == b'/' {
+        [&raw[6..10], &raw[3..5], &raw[0..2]]
+    } else if bytes[4] == b'-' && bytes[7] == b'-' {
+        [&raw[0..4], &raw[5..7], &raw[8..10]]
+    } else {
+        return Err("expected DD/MM/YYYY or YYYY-MM-DD");
+    };
+    if !parts.iter().all(|p| p.bytes().all(|b| b.is_ascii_digit())) {
+        return Err("non-digit calendar component");
+    }
+    let year: u32 = parts[0].parse().map_err(|_| "invalid year")?;
+    let month: u32 = parts[1].parse().map_err(|_| "invalid month")?;
+    let day: u32 = parts[2].parse().map_err(|_| "invalid day")?;
+    let leap = year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400));
+    let days = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if leap => 29,
+        2 => 28,
+        _ => 0,
+    };
+    if year == 0 || day == 0 || day > days {
+        return Err("invalid Gregorian date");
+    }
+    Ok(format!("{year:04}-{month:02}-{day:02}"))
 }
 
 /// Normalized address projection of one accepted row.
@@ -82,7 +119,7 @@ pub struct NormalizedAddress {
     pub postal_code: String,
 }
 
-/// One accepted registry row, serializable as `station-assertion-v1`.
+/// One accepted registry row, serializable as `station-assertion-v2`.
 #[derive(Debug, Clone, Serialize)]
 pub struct RegistryRow {
     pub schema_version: &'static str,
@@ -101,6 +138,7 @@ pub struct RegistryRow {
     pub brand_raw: String,
     pub published_at: String,
     pub effective_at: String,
+    pub brand_linked_at: String,
     pub auth_state: String,
     pub eligibility: String,
     pub auth_evidence: String,
@@ -338,17 +376,34 @@ pub fn parse_registry(
                 continue;
             }
         };
-        if !published.is_empty() && !effective.is_empty() && effective < published {
-            counts.quarantined += 1;
-            quarantine.push(quarantine_row(
-                file,
-                logical_row,
-                reason::DATE_REVERSAL,
-                format!("DATAVINCULACAO {effective} precedes DATAPUBLICACAO {published}; never auto-correct"),
-                Some(cnpj),
-            ));
-            continue;
-        }
+        let published = match normalize_calendar_date(&published) {
+            Ok(value) => value,
+            Err(detail) => {
+                counts.quarantined += 1;
+                quarantine.push(quarantine_row(
+                    file,
+                    logical_row,
+                    reason::INVALID_FIELD,
+                    format!("DATAPUBLICACAO: {detail}"),
+                    Some(cnpj),
+                ));
+                continue;
+            }
+        };
+        let effective = match normalize_calendar_date(&effective) {
+            Ok(value) => value,
+            Err(detail) => {
+                counts.quarantined += 1;
+                quarantine.push(quarantine_row(
+                    file,
+                    logical_row,
+                    reason::INVALID_FIELD,
+                    format!("DATAVINCULACAO: {detail}"),
+                    Some(cnpj),
+                ));
+                continue;
+            }
+        };
         let checksum = row_checksum(&[
             &cnpj,
             &simp,
@@ -372,7 +427,7 @@ pub fn parse_registry(
         let (street, number) = split_street_number(&address_raw);
         counts.accepted += 1;
         accepted.push(RegistryRow {
-            schema_version: "station-assertion-v1",
+            schema_version: "station-assertion-v2",
             source: REGISTRY_SOURCE,
             source_key: cnpj,
             checksum,
@@ -393,7 +448,8 @@ pub fn parse_registry(
             municipality_ibge: ibge,
             brand_raw: brand,
             published_at: published.clone(),
-            effective_at: effective,
+            effective_at: published.clone(),
+            brand_linked_at: effective,
             auth_state: "unknown".to_string(),
             eligibility: "pending".to_string(),
             auth_evidence: format!(

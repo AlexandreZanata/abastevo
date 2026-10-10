@@ -3,14 +3,63 @@
   "version": 1,
   "provenance": "RST-01 synthetic; owned [RST01-TEST] markers; no real personal data; raw 13-column layout mirrors the observed ANP registry header without copying production rows",
   "files": [
-    {"path": "registry-13col-sample.csv", "kind": "raw-registry", "rows": 12, "note": "real 13-column header; valid, leading-zero and alphanumeric CNPJs; unknown city; quoted separator and embedded newline; byte duplicate; short and bad-checksum CNPJs; date reversal; older conflicting address; 2000-char field; case/accent alias row"},
-    {"path": "registry-13col-header-variant.csv", "kind": "raw-registry-variant", "rows": 2, "note": "renamed RAZAO_SOCIAL plus EXTRA_COL; the whole run must quarantine with header_mismatch"},
-    {"path": "pmqc-sample.csv", "kind": "raw-pmqc", "rows": 11, "note": "repeated assay duplicate; second date/point; empty coords; zero point; swapped pair; out-of-Brazil; NaN; stale 2020 observation; second station; bad CNPJ"},
-    {"path": "pmqc-join-sample.csv", "kind": "raw-pmqc-join", "rows": 6, "note": "RST-04 join cases: conflicting far-apart pair, registry-missing CNPJ, predated evidence, coarse 2-decimal point, stale 2019 observation"},
-    {"path": "ibge-mapping-sample.json", "kind": "ibge-mapping", "note": "illustrative alias table with match/ambiguous/unmatched rules; never a census"},
-    {"path": "output-assertions-sample.jsonl", "kind": "output-assertions", "rows": 2, "note": "schema-pinning excerpt, not the full 7-row evaluation"},
-    {"path": "output-candidates-sample.jsonl", "kind": "output-candidates", "rows": 2, "note": "schema-pinning excerpt with original_crs and accuracy_m null"},
-    {"path": "output-quarantine-sample.jsonl", "kind": "output-quarantine", "rows": 10, "note": "typed reasons with row locators for every quarantined sample row plus the variant header run"},
-    {"path": "batch-manifest-sample.json", "kind": "output-manifest", "note": "versioned batch manifest with real file hashes of this directory"}
+    {
+      "path": "registry-13col-sample.csv",
+      "kind": "raw-registry",
+      "rows": 12,
+      "note": "real 13-column header; valid, leading-zero and alphanumeric CNPJs; unknown city; quoted separator and embedded newline; byte duplicate; short and bad-checksum CNPJs; date reversal; older conflicting address; 2000-char field; case/accent alias row"
+    },
+    {
+      "path": "registry-13col-header-variant.csv",
+      "kind": "raw-registry-variant",
+      "rows": 2,
+      "note": "renamed RAZAO_SOCIAL plus EXTRA_COL; the whole run must quarantine with header_mismatch"
+    },
+    {
+      "path": "pmqc-sample.csv",
+      "kind": "raw-pmqc",
+      "rows": 11,
+      "note": "repeated assay duplicate; second date/point; empty coords; zero point; swapped pair; out-of-Brazil; NaN; stale 2020 observation; second station; bad CNPJ"
+    },
+    {
+      "path": "pmqc-join-sample.csv",
+      "kind": "raw-pmqc-join",
+      "rows": 6,
+      "note": "RST-04 join cases: conflicting far-apart pair, registry-missing CNPJ, predated evidence, coarse 2-decimal point, stale 2019 observation"
+    },
+    {
+      "path": "ibge-mapping-sample.json",
+      "kind": "ibge-mapping",
+      "note": "illustrative alias table with match/ambiguous/unmatched rules; never a census"
+    },
+    {
+      "path": "output-assertions-sample.jsonl",
+      "kind": "output-assertions",
+      "rows": 2,
+      "note": "schema-pinning excerpt, not the full 7-row evaluation"
+    },
+    {
+      "path": "output-candidates-sample.jsonl",
+      "kind": "output-candidates",
+      "rows": 2,
+      "note": "schema-pinning excerpt with original_crs and accuracy_m null"
+    },
+    {
+      "path": "output-quarantine-sample.jsonl",
+      "kind": "output-quarantine",
+      "rows": 10,
+      "note": "typed reasons with row locators for every quarantined sample row plus the variant header run"
+    },
+    {
+      "path": "batch-manifest-sample.json",
+      "kind": "output-manifest",
+      "note": "versioned batch manifest with real file hashes of this directory"
+    },
+    {
+      "path": "output-assertions-v2-sample.jsonl",
+      "kind": "output-assertions-v2",
+      "rows": 1,
+      "note": "versioned independent authorization/distributor dates; v1 fixtures retained unchanged"
+    }
   ]
 }

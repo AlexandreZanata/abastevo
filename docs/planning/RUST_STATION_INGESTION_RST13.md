@@ -1,5 +1,7 @@
 # RST-13 — Rust preparation, spill and resource scaling
 
+> 2026-10-10 correction: historical `emit_run` results include full serialized buffers. Operational bounded file emission is now separate and tested; national VPS preparation evidence belongs to [hardening](../backend/RST_VPS_HARDENING.md). Historical parse-only/emit-only rates cannot be compared directly with the new full file-backed CLI.
+
 Status: MEASURED — offline preparation only; no database, no network,
 no new dependency, no parallelism added. Date: 2026-10-09. Scope:
 `RUST_STATION_BENCHMARK_PLAN.md` RST-13, dependencies RST-12 and

@@ -66,19 +66,26 @@ type RegistryAssertion struct {
 	Crs              string             `json:"crs"`
 }
 
+type RegistryRunAssertion struct {
+	RunID              pgtype.UUID `json:"run_id"`
+	AssertionID        pgtype.UUID `json:"assertion_id"`
+	SupersedesChecksum string      `json:"supersedes_checksum"`
+}
+
 type RegistrySourceRun struct {
-	ID               pgtype.UUID        `json:"id"`
-	Source           string             `json:"source"`
-	SnapshotIdentity string             `json:"snapshot_identity"`
-	Checksum         string             `json:"checksum"`
-	ParserVersion    string             `json:"parser_version"`
-	State            string             `json:"state"`
-	Accepted         int64              `json:"accepted"`
-	Duplicates       int64              `json:"duplicates"`
-	Rejected         int64              `json:"rejected"`
-	ErrorCode        string             `json:"error_code"`
-	StartedAt        pgtype.Timestamptz `json:"started_at"`
-	FinishedAt       pgtype.Timestamptz `json:"finished_at"`
+	ID                     pgtype.UUID        `json:"id"`
+	Source                 string             `json:"source"`
+	SnapshotIdentity       string             `json:"snapshot_identity"`
+	Checksum               string             `json:"checksum"`
+	ParserVersion          string             `json:"parser_version"`
+	State                  string             `json:"state"`
+	Accepted               int64              `json:"accepted"`
+	Duplicates             int64              `json:"duplicates"`
+	Rejected               int64              `json:"rejected"`
+	ErrorCode              string             `json:"error_code"`
+	StartedAt              pgtype.Timestamptz `json:"started_at"`
+	FinishedAt             pgtype.Timestamptz `json:"finished_at"`
+	PreparedManifestSha256 string             `json:"prepared_manifest_sha256"`
 }
 
 type StationSuggestion struct {

@@ -1,0 +1,50 @@
+# Executed dated Abastevo snapshot record; review admission, files and unique ownership before any replay.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: abastevo-rst-load-official-20261010
+  namespace: abastevo-temp
+  labels:
+    app: abastevo-rst-hardening
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app: abastevo-rst-hardening
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      containers:
+        - name: metrics
+          image: abastevo-api:temp
+          imagePullPolicy: Never
+          command: ["/bench/rst-hardening-station-load"]
+          args: ["--emit-dir", "/bench/official/prepared-portable", "--publish", "--timeout", "14m", "--attempts", "3"]
+          env:
+            - name: ANPFUEL_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: abastevo-temp-secrets
+                  key: ANPFUEL_DATABASE_URL
+            - name: GOMAXPROCS
+              value: "1"
+            - name: GOMEMLIMIT
+              value: "192MiB"
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 250m, memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: bench
+              mountPath: /bench
+              readOnly: true
+      volumes:
+        - name: bench
+          hostPath:
+            path: /opt/abastevo-temp/bench/rst-hardening-20261010
+            type: Directory

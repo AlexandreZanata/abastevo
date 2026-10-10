@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="720" height="390" preserveAspectRatio="xMinYMin meet" viewBox="0 0 720 390" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="720" height="390"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-390)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="55" y="366" style="font-family: Helvetica-Bold; font-size: 15px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,732) scale(1,-1)">Host RAM reserve during the Abastevo import</text>
+			<text x="55" y="347" style="font-family: Helvetica; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,694) scale(1,-1)">Only Abastevo mutated; aggregate host telemetry; 70 samples; no guard violation</text>
+			<g transform=" matrix(0,1,-1,0,16,195)">
+				<text x="-56.68" y="0" style="font-family: Helvetica; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,0) scale(1,-1)">Available host RAM (GiB)</text>
+			</g>
+			<g transform="">
+				<g transform="">
+					<g transform="">
+						<path d="M 65,65 L 665,65 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<path d="M 65,65 L 65,60 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 191.262902,65 L 191.262902,60 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 317.525805,65 L 317.525805,60 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 443.788707,65 L 443.788707,60 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 570.051609,65 L 570.051609,60 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,65,60)">
+							<text x="-2.5" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">0</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,191.262902,60)">
+							<text x="-2.5" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">2</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,317.525805,60)">
+							<text x="-2.5" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">4</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,443.788707,60)">
+							<text x="-2.5" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">6</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,570.051609,60)">
+							<text x="-2.5" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">8</text>
+						</g>
+					</g>
+				</g>
+				<g transform="">
+					<g transform="">
+						<path d="M 65,65 L 65,325 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<path d="M 65,65 L 60,65 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 65,130 L 60,130 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 65,195 L 60,195 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 65,260 L 60,260 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 65,325 L 60,325 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,60,65)">
+							<text x="-5.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">0</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,60,130)">
+							<text x="-5.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">8</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,60,195)">
+							<text x="-10.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">16</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,60,260)">
+							<text x="-10.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">24</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,60,325)">
+							<text x="-10.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">32</text>
+						</g>
+					</g>
+				</g>
+				<g transform="">
+					<polyline points="65 259.1206, 73.70164 259.3175, 81.67898 259.0715, 89.9131 259.3246, 97.8616 259.0437, 105.9401 259.4872, 113.9143 259.4538, 122.9384 259.5783, 131.3718 259.6787, 141.9079 260.4144, 150.6011 260.5884, 158.8941 260.5949, 166.9956 260.5532, 174.982 260.5979, 182.9556 260.5017, 191.3254 260.4377, 199.9817 260.6554, 208.2634 260.4896, 216.315 260.7519, 224.3336 260.6692, 233.406 260.5117, 241.3382 260.5455, 249.9056 260.5594, 258.6253 260.6912, 274.3126 261.0396, 282.8849 260.8883, 291.6722 260.8991, 300.0764 261.1607, 308.2832 261.0008, 316.4456 260.9375, 325.9712 260.8982, 334.4451 260.8557, 342.742 260.896, 351.1732 260.9839, 359.1607 261.0165, 367.3795 260.9055, 376.4145 260.8059, 384.7619 261.0323, 395.4286 260.918, 403.957 261.1661, 412.1129 260.9659, 420.6079 260.9682, 428.463 260.9406, 436.481 260.9615, 444.8898 261.1099, 455.6172 260.781, 464.7156 260.9717, 472.7973 260.8367, 480.7387 260.9773, 488.637 260.7967, 496.7433 260.8867, 504.7664 261.0047, 513.0891 261.0379, 523.2946 261.0656, 532.8165 260.8934, 542.2008 260.9724, 550.3776 260.8909, 559.1514 260.8656, 567.5367 260.9208, 576.555 260.9292, 585.8694 260.8997, 595.2162 260.9264, 603.7042 260.8643, 611.8034 260.849, 620.0784 261.061, 628.3759 260.9813, 636.7725 260.9923, 648.2018 260.7429, 656.5915 260.9606, 665 261.0252" style="stroke: rgb(15%,42%,51%); stroke-linecap: round; stroke-width: 1; fill: None; fill-rule: evenodd;"/>
+					<polyline points="65 162.5, 665 162.5" style="stroke: rgb(40%,40%,40%); stroke-linecap: round; stroke-width: 1; fill: None; fill-rule: evenodd; stroke-dasharray: 4, 3;"/>
+				</g>
+			</g>
+			<text x="290" y="35" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,70) scale(1,-1)">Elapsed import time (minutes)</text>
+			<text x="55" y="14" style="font-family: Times-Roman; font-size: 9px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,28) scale(1,-1)">Source: owned guard JSONL, 2026-10-10; solid: available RAM; dashed: 12 GiB stop reserve</text>
+		</g>
+	</g>
+</svg>

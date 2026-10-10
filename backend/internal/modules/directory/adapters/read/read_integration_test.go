@@ -32,7 +32,7 @@ func testDSN(t testing.TB) string {
 	defer cancel()
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		t.Fatalf("integration database unreachable at %s: %v (start it: docker compose -f infra/compose.dev.yml up -d db)", dsn, err)
+		t.Fatalf("integration database unreachable (check ANPFUEL_TEST_DATABASE_URL or start infra/compose.dev.yml db): %v", err)
 	}
 	defer conn.Close(ctx)
 	return dsn

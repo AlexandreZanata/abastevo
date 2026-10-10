@@ -1,0 +1,1032 @@
+{
+  "format": "abastevo-reproducible-hardening-report-v1",
+  "evidence": {
+    "format": "abastevo-vps-hardening-evidence-v1",
+    "source_revision": "2cd3fb6",
+    "tooling_revision": "5d42cb6",
+    "origin": "https://teste.abastevo.com.br",
+    "namespace": "abastevo-temp",
+    "publication": {
+      "real_assertions": 45617,
+      "published_assertions": 45617,
+      "real_stations": 45617,
+      "profiles": 45617,
+      "pointed_assertions": 0,
+      "synthetic_assertions_retained": 24552
+    },
+    "rust_prepare": {
+      "trials": [
+        {
+          "accounting": "input=45738 accepted=45617 duplicates=0 quarantined=121 assertion_bytes=43328274 emission=file-backed\n",
+          "max_rss_kib": 115520,
+          "output_hashes_match": true,
+          "system_seconds": 0.338037,
+          "trial": 1,
+          "user_seconds": 0.685734,
+          "wall_seconds": 4.099173637,
+          "warmup": false
+        },
+        {
+          "accounting": "input=45738 accepted=45617 duplicates=0 quarantined=121 assertion_bytes=43328274 emission=file-backed\n",
+          "max_rss_kib": 115700,
+          "output_hashes_match": true,
+          "system_seconds": 0.46443,
+          "trial": 2,
+          "user_seconds": 0.749924,
+          "wall_seconds": 4.887720417,
+          "warmup": false
+        },
+        {
+          "accounting": "input=45738 accepted=45617 duplicates=0 quarantined=121 assertion_bytes=43328274 emission=file-backed\n",
+          "max_rss_kib": 115512,
+          "output_hashes_match": true,
+          "system_seconds": 0.344876,
+          "trial": 3,
+          "user_seconds": 0.683744,
+          "wall_seconds": 4.105398749,
+          "warmup": false
+        },
+        {
+          "accounting": "input=45738 accepted=45617 duplicates=0 quarantined=121 assertion_bytes=43328274 emission=file-backed\n",
+          "max_rss_kib": 115768,
+          "output_hashes_match": true,
+          "system_seconds": 0.407265,
+          "trial": 4,
+          "user_seconds": 0.748645,
+          "wall_seconds": 4.679102557,
+          "warmup": false
+        },
+        {
+          "accounting": "input=45738 accepted=45617 duplicates=0 quarantined=121 assertion_bytes=43328274 emission=file-backed\n",
+          "max_rss_kib": 115640,
+          "output_hashes_match": true,
+          "system_seconds": 0.355614,
+          "trial": 5,
+          "user_seconds": 0.804846,
+          "wall_seconds": 4.609196775,
+          "warmup": false
+        }
+      ],
+      "wall_median_seconds": 4.609196775,
+      "wall_range_seconds": [
+        4.099173637,
+        4.887720417
+      ],
+      "rss_max_kib": 115768,
+      "scope": "full parse+bounded emission+fsync, 250m CPU/512Mi; warm caches after excluded warm-up; n=5"
+    },
+    "import_interval": {
+      "wal_bytes_delta": 227592702,
+      "table_bytes_delta": 52846592,
+      "index_bytes_delta": 34766848,
+      "completed_checkpoints_delta": 1,
+      "scope": "single full import+publication plus normal Abastevo background; cluster WAL not purified benchmark; n=1"
+    },
+    "guard": {
+      "samples": 70,
+      "available_mib_min": 24455.4765625,
+      "load1_max": 4.23095703125,
+      "container_memory_mib_max": {
+        "abastevo-temp-api-5cdf64df7c-q9zp8/api": 7.0,
+        "abastevo-temp-api-5cdf64df7c-q9zp8/private-storage": 396.0,
+        "abastevo-temp-api-5cdf64df7c-q9zp8/worker": 3.0,
+        "abastevo-temp-db-0/postgres": 200.0
+      },
+      "lock_waiters_max": 0,
+      "violations": 0,
+      "unexpected_restarts_or_oom": false
+    },
+    "pending": [
+      "24h/48h mixed ingestion/retention soak",
+      "professional p99 sample qualification",
+      "UF partition adoption decision",
+      "currency costs without provider price/allocation",
+      "fully streaming parser and COPY optimization"
+    ],
+    "http_evidence": {
+      "replicated_campaign": "NOT_ACCEPTED",
+      "completed_300s_windows": 1,
+      "successful_requests_in_completed_window": 1500,
+      "offered_rps": 5,
+      "remaining_planned_windows": 4,
+      "stop_reason": "host load1 5.9409 exceeded conservative5.2 threshold; not a percent-CPU measurement",
+      "at_stop_cpu_millicores": {
+        "api": 44,
+        "db": 97,
+        "worker": 2,
+        "storage": 5
+      },
+      "host_available_mib_at_stop": 24702.51171875,
+      "user_capacity": "UNPROVEN; one pilot window cannot certify repeated or long shared-host capacity",
+      "v1_connection_churn_timeout": "retained, failed diagnostic; separate from pooled v2"
+    }
+  },
+  "campaigns": [
+    {
+      "directory": "https-ladder-5",
+      "format": "abastevo-https-pilot-v1",
+      "transport": "Python urllib, TLS connection per request; no keep-alive claim",
+      "offered_rps": 5.0,
+      "stopped": true,
+      "reasons": [
+        "HTTP request failed: timeout",
+        "arrival/error/reconciliation budget breached"
+      ],
+      "completed_valid_trials": [],
+      "campaign_qualified": false,
+      "summary": [
+        {
+          "trial": 1,
+          "phase": "warmup",
+          "requested_seconds": 5,
+          "observation_seconds": 3.5306883070006734,
+          "offered": 16,
+          "completed": 16,
+          "success": 15,
+          "errors": 1,
+          "drops": 0,
+          "missed": 0,
+          "reconciled": true,
+          "successful_rps": 4.248463386093271,
+          "routes": {
+            "city_dense": {
+              "n": 5,
+              "p50_ms": 278.1146350025665,
+              "p95_ms": 447.5445230054902,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sorriso": {
+              "n": 2,
+              "p50_ms": 225.96931998850778,
+              "p95_ms": 277.88456999405753,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sparse": {
+              "n": 2,
+              "p50_ms": 152.00873799039982,
+              "p95_ms": 347.17534999072086,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_empty": {
+              "n": 2,
+              "p50_ms": 181.35703000007197,
+              "p95_ms": 326.8714629957685,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "text_national": {
+              "n": 2,
+              "p50_ms": 496.7677639942849,
+              "p95_ms": 513.6256279947702,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "detail": {
+              "n": 1,
+              "p50_ms": 235.64123299729545,
+              "p95_ms": 235.64123299729545,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "profile": {
+              "n": 1,
+              "p50_ms": 268.0524939933093,
+              "p95_ms": 268.0524939933093,
+              "p99_ms": null,
+              "p99_qualified": false
+            }
+          },
+          "p95_qualified": false,
+          "p95_budget_ms": 500,
+          "p95_budget_pass": false
+        }
+      ],
+      "manifest_sha256": "197e97bd60b038dab91cf2a546867792a609b78f86605b70cc8d39cc1e8b1b49"
+    },
+    {
+      "directory": "https-pooled-ladder-10",
+      "format": "abastevo-https-pilot-v2",
+      "transport": "Python http.client, one reusable verified TLS/HTTP1.1 connection per worker; max8; no automatic retry",
+      "offered_rps": 10.0,
+      "stopped": true,
+      "reasons": [
+        "HTTPS p95 budget breached"
+      ],
+      "completed_valid_trials": [],
+      "campaign_qualified": false,
+      "summary": [
+        {
+          "trial": 1,
+          "phase": "warmup",
+          "requested_seconds": 5,
+          "observation_seconds": 5.72037287899002,
+          "offered": 50,
+          "completed": 50,
+          "success": 50,
+          "errors": 0,
+          "drops": 0,
+          "missed": 0,
+          "reconciled": true,
+          "successful_rps": 8.740688947680614,
+          "routes": {
+            "city_dense": {
+              "n": 18,
+              "p50_ms": 145.92339500086382,
+              "p95_ms": 1000.6009140051901,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sorriso": {
+              "n": 6,
+              "p50_ms": 109.633562999079,
+              "p95_ms": 697.0959119935287,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sparse": {
+              "n": 6,
+              "p50_ms": 65.99758900119923,
+              "p95_ms": 227.46896899479907,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_empty": {
+              "n": 5,
+              "p50_ms": 67.34310700267088,
+              "p95_ms": 106.50905199872795,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "text_national": {
+              "n": 5,
+              "p50_ms": 216.74181800335646,
+              "p95_ms": 801.9732310058316,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "detail": {
+              "n": 5,
+              "p50_ms": 58.82283300161362,
+              "p95_ms": 115.46623700996861,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "profile": {
+              "n": 5,
+              "p50_ms": 84.84250000037719,
+              "p95_ms": 94.7806030017091,
+              "p99_ms": null,
+              "p99_qualified": false
+            }
+          },
+          "p95_qualified": false,
+          "p95_budget_ms": 500,
+          "p95_budget_pass": false
+        },
+        {
+          "trial": 1,
+          "phase": "steady",
+          "requested_seconds": 30,
+          "observation_seconds": 30.01041131200327,
+          "offered": 300,
+          "completed": 300,
+          "success": 300,
+          "errors": 0,
+          "drops": 0,
+          "missed": 0,
+          "reconciled": true,
+          "successful_rps": 9.996530766641273,
+          "routes": {
+            "city_dense": {
+              "n": 102,
+              "p50_ms": 89.67066300101578,
+              "p95_ms": 253.43351101037115,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sorriso": {
+              "n": 33,
+              "p50_ms": 80.57029600604437,
+              "p95_ms": 203.39343701198231,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sparse": {
+              "n": 33,
+              "p50_ms": 54.65992599783931,
+              "p95_ms": 103.4800009947503,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_empty": {
+              "n": 33,
+              "p50_ms": 53.81270400539506,
+              "p95_ms": 97.8684199944837,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "text_national": {
+              "n": 33,
+              "p50_ms": 141.71932599856518,
+              "p95_ms": 749.6784410031978,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "detail": {
+              "n": 33,
+              "p50_ms": 52.8929580032127,
+              "p95_ms": 97.04168800089974,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "profile": {
+              "n": 33,
+              "p50_ms": 58.578328011208214,
+              "p95_ms": 208.8073600025382,
+              "p99_ms": null,
+              "p99_qualified": false
+            }
+          },
+          "p95_qualified": false,
+          "p95_budget_ms": 500,
+          "p95_budget_pass": false
+        }
+      ],
+      "manifest_sha256": "07de5326b836a9fdb8c6a83ceeade7a205eee2ee56c6ecb7faa379d6e0358d5f"
+    },
+    {
+      "directory": "https-pooled-ladder-5",
+      "format": "abastevo-https-pilot-v2",
+      "transport": "Python http.client, one reusable verified TLS/HTTP1.1 connection per worker; max8; no automatic retry",
+      "offered_rps": 5.0,
+      "stopped": false,
+      "reasons": [],
+      "completed_valid_trials": [],
+      "campaign_qualified": false,
+      "summary": [
+        {
+          "trial": 1,
+          "phase": "warmup",
+          "requested_seconds": 5,
+          "observation_seconds": 5.030638433992863,
+          "offered": 25,
+          "completed": 25,
+          "success": 25,
+          "errors": 0,
+          "drops": 0,
+          "missed": 0,
+          "reconciled": true,
+          "successful_rps": 4.969548165312544,
+          "routes": {
+            "city_dense": {
+              "n": 9,
+              "p50_ms": 91.68209199560806,
+              "p95_ms": 444.0843600023072,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sorriso": {
+              "n": 3,
+              "p50_ms": 88.33742399292532,
+              "p95_ms": 99.70057698956225,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sparse": {
+              "n": 3,
+              "p50_ms": 62.307255997438915,
+              "p95_ms": 87.47422900341917,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_empty": {
+              "n": 3,
+              "p50_ms": 57.58430100104306,
+              "p95_ms": 65.74279199412558,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "text_national": {
+              "n": 3,
+              "p50_ms": 204.9827809969429,
+              "p95_ms": 217.43540400348138,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "detail": {
+              "n": 2,
+              "p50_ms": 76.7158540111268,
+              "p95_ms": 77.27211799647193,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "profile": {
+              "n": 2,
+              "p50_ms": 67.53069099795539,
+              "p95_ms": 68.50065400067251,
+              "p99_ms": null,
+              "p99_qualified": false
+            }
+          },
+          "p95_qualified": false,
+          "p95_budget_ms": 500,
+          "p95_budget_pass": true
+        },
+        {
+          "trial": 1,
+          "phase": "steady",
+          "requested_seconds": 30,
+          "observation_seconds": 30.00017277301231,
+          "offered": 150,
+          "completed": 150,
+          "success": 150,
+          "errors": 0,
+          "drops": 0,
+          "missed": 0,
+          "reconciled": true,
+          "successful_rps": 4.999971204663784,
+          "routes": {
+            "city_dense": {
+              "n": 51,
+              "p50_ms": 76.2258510076208,
+              "p95_ms": 123.51725100597832,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sorriso": {
+              "n": 17,
+              "p50_ms": 77.43266399484128,
+              "p95_ms": 115.0965790002374,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sparse": {
+              "n": 17,
+              "p50_ms": 54.84323999553453,
+              "p95_ms": 62.56134499562904,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_empty": {
+              "n": 17,
+              "p50_ms": 50.95396499382332,
+              "p95_ms": 76.86947399633937,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "text_national": {
+              "n": 16,
+              "p50_ms": 130.01780900231097,
+              "p95_ms": 387.60463800281286,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "detail": {
+              "n": 16,
+              "p50_ms": 51.74077699484769,
+              "p95_ms": 76.32410200312734,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "profile": {
+              "n": 16,
+              "p50_ms": 53.25700998946559,
+              "p95_ms": 82.68722500361037,
+              "p99_ms": null,
+              "p99_qualified": false
+            }
+          },
+          "p95_qualified": false,
+          "p95_budget_ms": 500,
+          "p95_budget_pass": true
+        }
+      ],
+      "manifest_sha256": "d43f28cd971803db2ace40261c7836c848e24b9ba171c927f839fa9243368ce9"
+    },
+    {
+      "directory": "https-pooled-qualified-5",
+      "format": "abastevo-https-pilot-v2",
+      "transport": "Python http.client, one reusable verified TLS/HTTP1.1 connection per worker; max8; no automatic retry",
+      "offered_rps": 5.0,
+      "stopped": true,
+      "reasons": [
+        "host load above 65% CPU reserve"
+      ],
+      "completed_valid_trials": [
+        {
+          "trial": 1,
+          "phase": "steady",
+          "requested_seconds": 300,
+          "observation_seconds": 300.0002423469996,
+          "offered": 1500,
+          "completed": 1500,
+          "success": 1500,
+          "errors": 0,
+          "drops": 0,
+          "missed": 0,
+          "reconciled": true,
+          "successful_rps": 4.999995960886603,
+          "routes": {
+            "city_dense": {
+              "n": 501,
+              "p50_ms": 83.88607300003059,
+              "p95_ms": 180.05300698860083,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sorriso": {
+              "n": 167,
+              "p50_ms": 78.67308000277262,
+              "p95_ms": 202.62554900546093,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sparse": {
+              "n": 167,
+              "p50_ms": 58.22729899955448,
+              "p95_ms": 75.45632199617103,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_empty": {
+              "n": 167,
+              "p50_ms": 57.46841600921471,
+              "p95_ms": 68.19523700687569,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "text_national": {
+              "n": 166,
+              "p50_ms": 139.54818999627605,
+              "p95_ms": 292.16960999474395,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "detail": {
+              "n": 166,
+              "p50_ms": 57.3074279964203,
+              "p95_ms": 79.10180599719752,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "profile": {
+              "n": 166,
+              "p50_ms": 59.074735996546224,
+              "p95_ms": 84.35252399067394,
+              "p99_ms": null,
+              "p99_qualified": false
+            }
+          },
+          "p95_qualified": true,
+          "p95_budget_ms": 500,
+          "p95_budget_pass": true
+        }
+      ],
+      "campaign_qualified": false,
+      "summary": [
+        {
+          "trial": 1,
+          "phase": "warmup",
+          "requested_seconds": 60,
+          "observation_seconds": 60.000320525999996,
+          "offered": 300,
+          "completed": 300,
+          "success": 300,
+          "errors": 0,
+          "drops": 0,
+          "missed": 0,
+          "reconciled": true,
+          "successful_rps": 4.99997328964269,
+          "routes": {
+            "city_dense": {
+              "n": 102,
+              "p50_ms": 84.75681599520613,
+              "p95_ms": 160.05470299569424,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sorriso": {
+              "n": 33,
+              "p50_ms": 77.48253700265195,
+              "p95_ms": 193.23638899368234,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sparse": {
+              "n": 33,
+              "p50_ms": 60.358982998877764,
+              "p95_ms": 92.9562109959079,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_empty": {
+              "n": 33,
+              "p50_ms": 58.02838101226371,
+              "p95_ms": 85.16811899608001,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "text_national": {
+              "n": 33,
+              "p50_ms": 141.1344350053696,
+              "p95_ms": 403.0400680057937,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "detail": {
+              "n": 33,
+              "p50_ms": 60.10281800990924,
+              "p95_ms": 83.11503699223977,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "profile": {
+              "n": 33,
+              "p50_ms": 59.4083369942382,
+              "p95_ms": 85.14178599580191,
+              "p99_ms": null,
+              "p99_qualified": false
+            }
+          },
+          "p95_qualified": false,
+          "p95_budget_ms": 500,
+          "p95_budget_pass": true
+        },
+        {
+          "trial": 1,
+          "phase": "steady",
+          "requested_seconds": 300,
+          "observation_seconds": 300.0002423469996,
+          "offered": 1500,
+          "completed": 1500,
+          "success": 1500,
+          "errors": 0,
+          "drops": 0,
+          "missed": 0,
+          "reconciled": true,
+          "successful_rps": 4.999995960886603,
+          "routes": {
+            "city_dense": {
+              "n": 501,
+              "p50_ms": 83.88607300003059,
+              "p95_ms": 180.05300698860083,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sorriso": {
+              "n": 167,
+              "p50_ms": 78.67308000277262,
+              "p95_ms": 202.62554900546093,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sparse": {
+              "n": 167,
+              "p50_ms": 58.22729899955448,
+              "p95_ms": 75.45632199617103,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_empty": {
+              "n": 167,
+              "p50_ms": 57.46841600921471,
+              "p95_ms": 68.19523700687569,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "text_national": {
+              "n": 166,
+              "p50_ms": 139.54818999627605,
+              "p95_ms": 292.16960999474395,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "detail": {
+              "n": 166,
+              "p50_ms": 57.3074279964203,
+              "p95_ms": 79.10180599719752,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "profile": {
+              "n": 166,
+              "p50_ms": 59.074735996546224,
+              "p95_ms": 84.35252399067394,
+              "p99_ms": null,
+              "p99_qualified": false
+            }
+          },
+          "p95_qualified": true,
+          "p95_budget_ms": 500,
+          "p95_budget_pass": true
+        },
+        {
+          "trial": 2,
+          "phase": "warmup",
+          "requested_seconds": 60,
+          "observation_seconds": 60.101283226002124,
+          "offered": 300,
+          "completed": 300,
+          "success": 300,
+          "errors": 0,
+          "drops": 0,
+          "missed": 0,
+          "reconciled": true,
+          "successful_rps": 4.991573954783855,
+          "routes": {
+            "city_dense": {
+              "n": 102,
+              "p50_ms": 82.26165499945637,
+              "p95_ms": 287.03017698717304,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sorriso": {
+              "n": 33,
+              "p50_ms": 74.9404799862532,
+              "p95_ms": 239.673087009578,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sparse": {
+              "n": 33,
+              "p50_ms": 56.95410699991044,
+              "p95_ms": 75.9084309975151,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_empty": {
+              "n": 33,
+              "p50_ms": 57.16942000435665,
+              "p95_ms": 96.99847101001069,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "text_national": {
+              "n": 33,
+              "p50_ms": 138.2043109915685,
+              "p95_ms": 639.0718850016128,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "detail": {
+              "n": 33,
+              "p50_ms": 57.42088799888734,
+              "p95_ms": 86.61876799305901,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "profile": {
+              "n": 33,
+              "p50_ms": 58.97836000076495,
+              "p95_ms": 112.67092899652198,
+              "p99_ms": null,
+              "p99_qualified": false
+            }
+          },
+          "p95_qualified": false,
+          "p95_budget_ms": 500,
+          "p95_budget_pass": false
+        },
+        {
+          "trial": 2,
+          "phase": "steady",
+          "requested_seconds": 300,
+          "observation_seconds": 1.1821956709900405,
+          "offered": 6,
+          "completed": 6,
+          "success": 6,
+          "errors": 0,
+          "drops": 0,
+          "missed": 0,
+          "reconciled": true,
+          "successful_rps": 5.075301954857647,
+          "routes": {
+            "city_dense": {
+              "n": 3,
+              "p50_ms": 111.47571798937861,
+              "p95_ms": 125.1668220065767,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sorriso": {
+              "n": 1,
+              "p50_ms": 79.56840199767612,
+              "p95_ms": 79.56840199767612,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sparse": {
+              "n": 1,
+              "p50_ms": 69.70698900113348,
+              "p95_ms": 69.70698900113348,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_empty": {
+              "n": 1,
+              "p50_ms": 64.33633100823499,
+              "p95_ms": 64.33633100823499,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "text_national": {
+              "n": 0,
+              "p50_ms": null,
+              "p95_ms": null,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "detail": {
+              "n": 0,
+              "p50_ms": null,
+              "p95_ms": null,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "profile": {
+              "n": 0,
+              "p50_ms": null,
+              "p95_ms": null,
+              "p99_ms": null,
+              "p99_qualified": false
+            }
+          },
+          "p95_qualified": false,
+          "p95_budget_ms": 500,
+          "p95_budget_pass": true
+        }
+      ],
+      "manifest_sha256": "9743addce010866f1e687211341aabc4a99d9cc4e3cc45a137e438723e533bb6"
+    },
+    {
+      "directory": "https-smoke-national",
+      "format": "abastevo-https-pilot-v1",
+      "transport": "Python urllib, TLS connection per request; no keep-alive claim",
+      "offered_rps": 1.0,
+      "stopped": true,
+      "reasons": [
+        "HTTP request failed: semantic",
+        "arrival/error/reconciliation budget breached"
+      ],
+      "completed_valid_trials": [],
+      "campaign_qualified": false,
+      "summary": [
+        {
+          "trial": 1,
+          "phase": "steady",
+          "requested_seconds": 30,
+          "observation_seconds": 7.221988322009565,
+          "offered": 8,
+          "completed": 8,
+          "success": 7,
+          "errors": 1,
+          "drops": 0,
+          "missed": 0,
+          "reconciled": true,
+          "successful_rps": 0.9692621599327378,
+          "routes": {
+            "city_dense": {
+              "n": 3,
+              "p50_ms": 205.9938189922832,
+              "p95_ms": 432.0782080030767,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sorriso": {
+              "n": 1,
+              "p50_ms": 158.13613499631174,
+              "p95_ms": 158.13613499631174,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sparse": {
+              "n": 1,
+              "p50_ms": 194.49585700931493,
+              "p95_ms": 194.49585700931493,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_empty": {
+              "n": 1,
+              "p50_ms": 170.02348700771108,
+              "p95_ms": 170.02348700771108,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "text_national": {
+              "n": 1,
+              "p50_ms": 371.1912179860519,
+              "p95_ms": 371.1912179860519,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "detail": {
+              "n": 0,
+              "p50_ms": null,
+              "p95_ms": null,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "profile": {
+              "n": 0,
+              "p50_ms": null,
+              "p95_ms": null,
+              "p99_ms": null,
+              "p99_qualified": false
+            }
+          },
+          "p95_qualified": false,
+          "p95_budget_ms": 500,
+          "p95_budget_pass": true
+        }
+      ],
+      "manifest_sha256": "4fff54436457e9fdeaea7b666d95bdcd1937a423418e7f1ce5846683f3694a14"
+    },
+    {
+      "directory": "https-smoke-qualified",
+      "format": "abastevo-https-pilot-v1",
+      "transport": "Python urllib, TLS connection per request; no keep-alive claim",
+      "offered_rps": 1.0,
+      "stopped": false,
+      "reasons": [],
+      "completed_valid_trials": [],
+      "campaign_qualified": false,
+      "summary": [
+        {
+          "trial": 1,
+          "phase": "steady",
+          "requested_seconds": 30,
+          "observation_seconds": 30.000139825991937,
+          "offered": 30,
+          "completed": 30,
+          "success": 30,
+          "errors": 0,
+          "drops": 0,
+          "missed": 0,
+          "reconciled": true,
+          "successful_rps": 0.9999953391553257,
+          "routes": {
+            "city_dense": {
+              "n": 12,
+              "p50_ms": 205.66058199619874,
+              "p95_ms": 379.9210110009881,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sorriso": {
+              "n": 3,
+              "p50_ms": 215.62653899309225,
+              "p95_ms": 326.9277319923276,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_sparse": {
+              "n": 3,
+              "p50_ms": 173.54444599186536,
+              "p95_ms": 184.0566049941117,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "city_empty": {
+              "n": 3,
+              "p50_ms": 195.97474900365341,
+              "p95_ms": 214.68022599583492,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "text_national": {
+              "n": 3,
+              "p50_ms": 243.9040369936265,
+              "p95_ms": 376.39094699989073,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "detail": {
+              "n": 3,
+              "p50_ms": 148.05737699498422,
+              "p95_ms": 174.32579401065595,
+              "p99_ms": null,
+              "p99_qualified": false
+            },
+            "profile": {
+              "n": 3,
+              "p50_ms": 184.5389889931539,
+              "p95_ms": 320.3297209984157,
+              "p99_ms": null,
+              "p99_qualified": false
+            }
+          },
+          "p95_qualified": false,
+          "p95_budget_ms": 500,
+          "p95_budget_pass": true
+        }
+      ],
+      "manifest_sha256": "e07ae872ab8b0e2032c05acf3ede813f37023054a090a8ac7ff2e91a4c940c2d"
+    }
+  ],
+  "qualification": "Selected bounded evidence only; RST20/21 remain partial until long mixed/maintenance trials and omitted matrix exist."
+}

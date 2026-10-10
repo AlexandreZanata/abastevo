@@ -281,9 +281,9 @@ func TestLoadBatchIntegrationRestrictedRole(t *testing.T) {
 	})
 	database := strings.TrimPrefix(parsed.Path, "/")
 	for _, grant := range []string{
-		"GRANT CONNECT ON DATABASE " + pgx.Identifier{database}.Sanitize() + " TO " + pgx.Identifier{role}.Sanitize(),
+		"GRANT CONNECT, TEMPORARY ON DATABASE " + pgx.Identifier{database}.Sanitize() + " TO " + pgx.Identifier{role}.Sanitize(),
 		"GRANT USAGE ON SCHEMA public TO " + pgx.Identifier{role}.Sanitize(),
-		"GRANT SELECT, INSERT, UPDATE ON registry_source_runs, registry_assertions TO " + pgx.Identifier{role}.Sanitize(),
+		"GRANT SELECT, INSERT, UPDATE ON registry_source_runs, registry_assertions, registry_run_assertions TO " + pgx.Identifier{role}.Sanitize(),
 	} {
 		if _, err := admin.Exec(ctx, grant); err != nil {
 			t.Fatalf("grant: %v", err)
@@ -304,6 +304,12 @@ func TestLoadBatchIntegrationRestrictedRole(t *testing.T) {
 	}
 	if reports["registry-13col"].State != "complete" {
 		t.Fatalf("restricted report = %+v", reports["registry-13col"])
+	}
+	if _, err := LoadPreparedBatch(ctx, rolePool, manifestJSON, preparedOpener(streams)); err != nil {
+		t.Fatalf("restricted operational load: %v", err)
+	}
+	if _, err := rolePool.Exec(ctx, "CREATE TABLE public.forbidden_loader_ddl(id int)"); err == nil {
+		t.Fatal("restricted role gained persistent DDL")
 	}
 	// The restricted role cannot reach canonical tables: the Store
 	// boundary is staging-only.

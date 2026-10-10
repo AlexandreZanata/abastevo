@@ -1,5 +1,7 @@
 # RST-18 — Mixed reads, ingestion contention and sustainable capacity
 
+> 2026-10-10 correction: concurrent importer throughput used summed service durations rather than elapsed wall time, and checkpoint collection used incompatible PG18 columns while ignoring errors. Those metrics are invalid for comparison. Reader-direct read envelopes are not HTTP or user-capacity claims. Corrected collectors and guarded HTTPS evidence are tracked in [hardening](../backend/RST_VPS_HARDENING.md).
+
 Status: MEASURED — isolated disposable PostGIS only; one additive
 loader constructor, no migration, no product change. Date:
 2026-10-09. Scope: `RUST_STATION_BENCHMARK_PLAN.md` RST-18 over the

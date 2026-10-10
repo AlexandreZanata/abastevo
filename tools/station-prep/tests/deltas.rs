@@ -102,7 +102,7 @@ fn golden_row_checksum_pins_canonical_form() {
     // Frozen vector: changing the canonical form changes every checksum.
     assert_eq!(
         alfa.checksum,
-        "6f15da0b2f8e63778bd78b04e9955e208ee504cc195c686888f543a24e75fe23"
+        "4a6b42a25a72710f6a4838cc168b150e318d14f04bc00572099dcce230edaacc"
     );
 }
 
@@ -363,7 +363,7 @@ fn manifest_counts_match_written_files() {
     }
     let counts = &manifest.counts;
     assert_eq!(counts["registry-13col"].input, 12);
-    assert_eq!(counts["registry-13col"].accepted, 7);
+    assert_eq!(counts["registry-13col"].accepted, 8);
     assert_eq!(counts["pmqc"].input, 11);
     assert_eq!(counts["pmqc"].accepted, 5);
     std::fs::remove_dir_all(&scratch).ok();

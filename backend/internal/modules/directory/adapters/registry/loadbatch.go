@@ -38,10 +38,11 @@ const (
 
 // Row schema versions frozen by the RST-01 contract.
 const (
-	SchemaAssertion  = "station-assertion-v1"
-	SchemaCandidate  = "station-coordinate-candidate-v1"
-	SchemaQuarantine = "station-quarantine-v1"
-	FormatBatch      = "station-batch-v1"
+	SchemaAssertion   = "station-assertion-v1"
+	SchemaAssertionV2 = "station-assertion-v2"
+	SchemaCandidate   = "station-coordinate-candidate-v1"
+	SchemaQuarantine  = "station-quarantine-v1"
+	FormatBatch       = "station-batch-v1"
 )
 
 // BatchManifest mirrors station-batch-v1 (loader subset). StartedAt
@@ -121,6 +122,7 @@ type BatchAssertion struct {
 	BrandRaw               string            `json:"brand_raw"`
 	PublishedAt            string            `json:"published_at"`
 	EffectiveAt            string            `json:"effective_at"`
+	BrandLinkedAt          string            `json:"brand_linked_at,omitempty"`
 	AuthState              string            `json:"auth_state"`
 	Eligibility            string            `json:"eligibility"`
 	AuthEvidence           string            `json:"auth_evidence"`
@@ -239,51 +241,63 @@ func ValidateBatch(manifestJSON []byte, streams BatchStreams) (*BatchManifest, e
 	return manifest, nil
 }
 
-func validateBatch(manifestJSON []byte, streams BatchStreams) (*validatedBatch, *BatchManifest, error) {
-	fail := func(format string, args ...any) (*validatedBatch, *BatchManifest, error) {
-		return nil, nil, fmt.Errorf("registry: "+format, args...)
-	}
+func validateBatchManifest(manifestJSON []byte) (BatchManifest, error) {
 	var manifest BatchManifest
 	if err := decodeStrict(manifestJSON, &manifest, "batch manifest"); err != nil {
-		return fail("%v", err)
+		return manifest, fmt.Errorf("%v", err)
 	}
 	if manifest.FormatVersion != FormatBatch {
-		return fail("unsupported batch format %q", manifest.FormatVersion)
+		return manifest, fmt.Errorf("registry: unsupported batch format %q", manifest.FormatVersion)
 	}
 	if _, err := mustUUID(manifest.RunID); err != nil {
-		return fail("malformed batch run id")
+		return manifest, fmt.Errorf("registry: malformed batch run id")
 	}
 	if manifest.ParserVersion == "" || manifest.PolicyVersion == "" {
-		return fail("batch parser/policy version must be recorded")
+		return manifest, fmt.Errorf("registry: batch parser/policy version must be recorded")
 	}
 	if !manifest.Completeness.EOFValidated || !manifest.Completeness.ExpectedManifest {
-		return fail("batch completeness not attested")
+		return manifest, fmt.Errorf("registry: batch completeness not attested")
 	}
 	if len(manifest.Inputs) == 0 {
-		return fail("batch carries no inputs")
+		return manifest, fmt.Errorf("registry: batch carries no inputs")
 	}
 	seenInputs := map[string]bool{}
 	for _, input := range manifest.Inputs {
 		if input.Key == "" || input.Edition == "" {
-			return fail("batch input without key/edition")
+			return manifest, fmt.Errorf("registry: batch input without key/edition")
 		}
 		if seenInputs[input.Key] {
-			return fail("duplicate batch input %q", input.Key)
+			return manifest, fmt.Errorf("registry: duplicate batch input %q", input.Key)
 		}
 		seenInputs[input.Key] = true
 		if !validSHA256(input.SHA256) {
-			return fail("input %q carries a malformed sha256", input.Key)
+			return manifest, fmt.Errorf("registry: input %q carries a malformed sha256", input.Key)
 		}
 		counts, ok := manifest.Counts[input.Key]
 		if !ok {
-			return fail("input %q has no row accounting", input.Key)
+			return manifest, fmt.Errorf("registry: input %q has no row accounting", input.Key)
 		}
 		if counts.Accepted+counts.Duplicates+counts.Quarantined != counts.Input {
-			return fail("input %q counts do not reconcile", input.Key)
+			return manifest, fmt.Errorf("registry: input %q counts do not reconcile", input.Key)
 		}
 		if input.Rows != counts.Input {
-			return fail("input %q rows do not match accounting", input.Key)
+			return manifest, fmt.Errorf("registry: input %q rows do not match accounting", input.Key)
 		}
+	}
+	return manifest, nil
+}
+
+func validateBatch(manifestJSON []byte, streams BatchStreams) (*validatedBatch, *BatchManifest, error) {
+	fail := func(format string, args ...any) (*validatedBatch, *BatchManifest, error) {
+		return nil, nil, fmt.Errorf("registry: "+format, args...)
+	}
+	manifest, err := validateBatchManifest(manifestJSON)
+	if err != nil {
+		return fail("%v", err)
+	}
+	seenInputs := map[string]bool{}
+	for _, input := range manifest.Inputs {
+		seenInputs[input.Key] = true
 	}
 	outputs := map[string]BatchOutput{}
 	for _, output := range manifest.Outputs {
@@ -407,8 +421,21 @@ func mapAssertionRow(row BatchAssertion) (Assertion, error) {
 	invalid := func(format string, args ...any) (Assertion, error) {
 		return Assertion{}, fmt.Errorf("registry: "+format, args...)
 	}
-	if row.SchemaVersion != SchemaAssertion {
+	if row.SchemaVersion != SchemaAssertion && row.SchemaVersion != SchemaAssertionV2 {
 		return invalid("assertion row with schema %q", row.SchemaVersion)
+	}
+	if row.SchemaVersion == SchemaAssertionV2 {
+		if _, err := parseEffectiveDate(row.PublishedAt, "authorization publication date"); err != nil {
+			return invalid("%v", err)
+		}
+		if _, err := parseEffectiveDate(row.BrandLinkedAt, "distributor linkage date"); err != nil {
+			return invalid("%v", err)
+		}
+		if row.EffectiveAt != row.PublishedAt {
+			return invalid("v2 effective date must match authorization publication")
+		}
+	} else if row.BrandLinkedAt != "" {
+		return invalid("brand_linked_at requires assertion v2")
 	}
 	cnpj, err := ValidCNPJText(row.SourceKey)
 	if err != nil {
@@ -442,12 +469,20 @@ func mapAssertionRow(row BatchAssertion) (Assertion, error) {
 	if err != nil {
 		return invalid("%v", err)
 	}
+	address := make(map[string]string, len(row.AddressNormalized)+3)
+	for key, value := range row.AddressNormalized {
+		address[key] = value
+	}
+	address["raw"] = row.AddressRaw
+	address["municipio_ibge"] = row.MunicipalityIBGE
+	address["uf"] = strings.ToUpper(row.UF)
+
 	return Assertion{
 		Source:           SourcePrep,
 		SourceKey:        cnpj,
 		Checksum:         strings.ToLower(row.Checksum),
 		DisplayName:      row.BusinessNameNormalized,
-		Address:          map[string]string{"municipio_ibge": row.MunicipalityIBGE, "uf": strings.ToUpper(row.UF)},
+		Address:          address,
 		MunicipalityCode: row.MunicipalityIBGE,
 		State:            strings.ToUpper(row.UF),
 		AuthState:        row.AuthState,

@@ -44,9 +44,9 @@ fn registry_sample_counts_reconcile() {
     .expect("sample must parse");
     assert_eq!(batch.state, RunState::Complete);
     assert_eq!(batch.counts.input, 12);
-    assert_eq!(batch.counts.accepted, 7);
+    assert_eq!(batch.counts.accepted, 8);
     assert_eq!(batch.counts.duplicates, 1);
-    assert_eq!(batch.counts.quarantined, 4);
+    assert_eq!(batch.counts.quarantined, 3);
     assert_eq!(
         batch.counts.accepted + batch.counts.duplicates + batch.counts.quarantined,
         batch.counts.input
@@ -84,7 +84,9 @@ fn registry_sample_counts_reconcile() {
     assert!(reasons.contains(&("registry-13col-sample.csv:5".to_string(), "unknown_city")));
     assert!(reasons.contains(&("registry-13col-sample.csv:8".to_string(), "invalid_cnpj")));
     assert!(reasons.contains(&("registry-13col-sample.csv:9".to_string(), "invalid_cnpj")));
-    assert!(reasons.contains(&("registry-13col-sample.csv:10".to_string(), "date_reversal")));
+    assert!(!reasons
+        .iter()
+        .any(|(locator, _)| locator == "registry-13col-sample.csv:10"));
     // Quoted separator and embedded newline survive as typed values.
     let quebra = batch
         .accepted
@@ -169,7 +171,7 @@ fn registry_bom_prefix_is_stripped() {
     .expect("BOM must strip");
     assert_eq!(batch.state, RunState::Complete);
     assert_eq!(batch.counts.input, 12);
-    assert_eq!(batch.counts.accepted, 7);
+    assert_eq!(batch.counts.accepted, 8);
 }
 
 #[test]
@@ -305,7 +307,7 @@ fn emitted_jsonl_matches_frozen_schema_keys() {
         &aliases(),
     )
     .expect("sample must parse");
-    let sample_assertion = text("output-assertions-sample.jsonl");
+    let sample_assertion = text("output-assertions-v2-sample.jsonl");
     assert_eq!(
         jsonl_keys(&registry.accepted[0].to_jsonl()),
         jsonl_keys(sample_assertion.lines().next().expect("sample line"))
@@ -354,4 +356,55 @@ fn bounds_are_enforced() {
             .any(|row| row.reason == "record_too_large"),
         "2000-char field must quarantine at 100 bytes"
     );
+}
+
+#[test]
+fn anp_calendar_dates_are_normalized_with_independent_brand_linkage() {
+    let header = String::from_utf8(bytes("registry-13col-sample.csv"))
+        .unwrap()
+        .lines()
+        .next()
+        .unwrap()
+        .to_string();
+    for (published, linked, want) in [
+        ("15/03/2001", "04/11/2009", "2001-03-15"),
+        ("01/05/2024", "01/04/2024", "2024-05-01"),
+        ("2024-02-29", "2023-01-01", "2024-02-29"),
+    ] {
+        let csv=format!("{header}\nSIMP;PRC;{published};[RST-H-TEST] DATE;04218406000104;RUA 1;;CENTRO;01000000;SP;SÃO PAULO;BRANCA;{linked}\n");
+        let batch =
+            parse_registry("date.csv", csv.into_bytes(), &Limits::default(), &aliases()).unwrap();
+        assert_eq!(
+            batch.counts.accepted, 1,
+            "calendar/linkage semantics: {published} {linked}"
+        );
+        assert_eq!(batch.accepted[0].published_at, want);
+        assert_eq!(batch.accepted[0].effective_at, want);
+    }
+}
+
+#[test]
+fn invalid_calendar_dates_quarantine_without_panicking() {
+    let header = String::from_utf8(bytes("registry-13col-sample.csv"))
+        .unwrap()
+        .lines()
+        .next()
+        .unwrap()
+        .to_string();
+    for invalid in [
+        "2023-02-29",
+        "31/04/2024",
+        "00/12/2024",
+        "2024-13-01",
+        "0000-01-01",
+        "é024-01-0",
+        "02/03/abcd",
+    ] {
+        let csv=format!("{header}\nSIMP;PRC;{invalid};[RST-H-TEST] INVALID DATE;04218406000104;RUA 1;;CENTRO;01000000;SP;SÃO PAULO;BRANCA;01/01/2000\n");
+        let batch =
+            parse_registry("date.csv", csv.into_bytes(), &Limits::default(), &aliases()).unwrap();
+        assert_eq!(batch.counts.accepted, 0, "{invalid}");
+        assert_eq!(batch.counts.quarantined, 1, "{invalid}");
+        assert_eq!(batch.quarantine[0].reason, "invalid_field");
+    }
 }

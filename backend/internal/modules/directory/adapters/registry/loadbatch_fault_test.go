@@ -21,6 +21,7 @@ import (
 	"runtime"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -272,6 +273,29 @@ func TestFaultWorkerKillMidLoad(t *testing.T) {
 	}
 }
 
+// disconnectGateStore blocks LoadBatch mid-stage at a deterministic row
+// so the server-side kill always lands while staging is in flight. It
+// delegates every Store call to the wrapped store; only the staging
+// boundary pauses, and a cancelled context still unblocks it.
+type disconnectGateStore struct {
+	Store
+	staged  atomic.Int64
+	entered chan struct{}
+	release chan struct{}
+}
+
+func (g *disconnectGateStore) StageAssertion(ctx context.Context, a Assertion) (bool, error) {
+	if g.staged.Add(1) == 51 {
+		close(g.entered)
+		select {
+		case <-g.release:
+		case <-ctx.Done():
+			return false, ctx.Err()
+		}
+	}
+	return g.Store.StageAssertion(ctx, a)
+}
+
 // TestFaultDBDisconnectMidLoad terminates the loader backend
 // server-side: same invariants as the client-side kill, proving the
 // failure surfaces through the server path too.
@@ -280,54 +304,51 @@ func TestFaultDBDisconnectMidLoad(t *testing.T) {
 	assertDurability(t, fs.pool)
 	runID := "aaaaaaaa-2222-4222-8222-222222222222"
 	manifestJSON, streams := faultBatch(t, 1500, runID)
+	gate := &disconnectGateStore{Store: fs.store, entered: make(chan struct{}), release: make(chan struct{})}
 	ctx := context.Background()
 	done := make(chan error, 1)
-	go func() { _, err := LoadBatch(ctx, fs.store, manifestJSON, streams); done <- err }()
-	deadline := time.Now().Add(60 * time.Second)
-	killed := false
-	var loadErr error
-	for {
-		select {
-		case err := <-done:
-			loadErr = err
-			goto settled
-		default:
-		}
-		if faultLiveTotal(fs) >= 50 {
-			_, err := fs.pool.Exec(ctx, `SELECT pg_terminate_backend(pid)
-				FROM pg_stat_activity WHERE datname = current_database()
-				AND application_name = 'rst19-fault' AND pid <> pg_backend_pid()`)
-			if err != nil {
-				t.Fatalf("terminate: %v", err)
-			}
-			killed = true
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatal("staging never started")
-		}
-		time.Sleep(5 * time.Millisecond)
+	go func() { _, err := LoadBatch(ctx, gate, manifestJSON, streams); done <- err }()
+	select {
+	case <-gate.entered:
+	case err := <-done:
+		t.Fatalf("load settled before disconnect window: %v", err)
+	case <-time.After(60 * time.Second):
+		t.Fatal("staging never reached disconnect window")
 	}
-	// Drain remaining in-flight work after the server-side kill.
-	deadline = time.Now().Add(60 * time.Second)
+	// The loader is parked before row 51 with 1450 rows ahead: releases
+	// and repeated terminate rounds now race a guaranteed in-flight
+	// load. One shot is not deterministic (the killer may reuse the
+	// loader's own idle pooled connection, which the pid exclusion
+	// then spares), so rounds repeat until the loader settles. A
+	// failing round is transient (the killer can draw a dead pooled
+	// connection too) and never aborts the fault.
+	close(gate.release)
+	var terminated int64
+	var loadErr error
+	deadline := time.Now().Add(60 * time.Second)
+settled:
 	for {
+		var n int64
+		if err := fs.pool.QueryRow(ctx, `SELECT count(*) FROM (
+				SELECT pg_terminate_backend(pid) AS ok FROM pg_stat_activity
+				WHERE datname = current_database()
+				AND application_name = 'rst19-fault' AND pid <> pg_backend_pid()
+			) s WHERE ok`).Scan(&n); err == nil {
+			terminated += n
+		}
 		select {
 		case err := <-done:
 			loadErr = err
-			goto settled
+			break settled
 		default:
 		}
 		if time.Now().After(deadline) {
 			t.Fatal("load never settled after disconnect")
 		}
-		time.Sleep(10 * time.Millisecond)
-	}
-settled:
-	if !killed {
-		t.Fatal("disconnect never fired")
+		time.Sleep(5 * time.Millisecond)
 	}
 	if loadErr == nil {
-		t.Fatal("disconnected load returned nil error")
+		t.Fatalf("disconnected load returned nil error (terminated %d backends)", terminated)
 	}
 	if report := faultRunState(t, fs.store, runID, "registry-13col"); report.State == "complete" {
 		t.Fatal("disconnected load reports complete")

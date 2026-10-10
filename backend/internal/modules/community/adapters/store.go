@@ -164,6 +164,16 @@ func (s *Store) Submit(ctx context.Context, obs domain.Observation, enqueue func
 		}
 		var conflict *pgconn.PgError
 		if errors.As(err, &conflict) && conflict.Code == "23505" {
+			// The photo-subset index (000046) can surface as 23505 for an
+			// identical concurrent retry that also matches the natural
+			// key. Converge identical replays; reject divergent payloads
+			// (including a reused photo product under a new key).
+			_ = tx.Rollback(ctx)
+			if id, existed, rerr := s.resolveConflict(ctx, obs); rerr == nil {
+				return id, existed, nil
+			} else if rerr != nil && !errors.Is(rerr, domain.ErrConflict) && !errors.Is(rerr, pgx.ErrNoRows) {
+				return "", false, rerr
+			}
 			return "", false, domain.ErrConflict
 		}
 		return "", false, err

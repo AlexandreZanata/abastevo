@@ -1,0 +1,13 @@
+{
+  "url": "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/arquivos/arquivos-dados-cadastrais-dos-revendedores-varejistas-de-combustiveis-automotivos/dados-cadastrais-revendedores-varejistas-combustiveis-automoveis.csv",
+  "last_modified": null,
+  "content_encoding": null,
+  "sha256": "35101dee91a7a6398043a67d478e60f2b0e0776e5e53436ba80517d9db0c2e8e",
+  "bytes": 7890947,
+  "alias_sha256": "9ffbeda37d527bd9ef1293ecfae53e542dddd49570664bb590a9df6526da36e5",
+  "run_id": "8b1aba98-2bb9-5666-a038-cfc739bddafe",
+  "edition": "ANP-page-updated-2026-10-09",
+  "fetched_at": "2026-10-10T14:14:57.642669+00:00",
+  "prepared_at": "2026-10-10T14:22:08.353372+00:00",
+  "prepared_directory": "prepared-portable"
+}
