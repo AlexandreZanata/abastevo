@@ -1,0 +1,67 @@
+# Replace __REVISION__ with the tested immutable tool-directory revision.
+# Scope: existing Abastevo namespace only. Start suspended; validate a guarded
+# manual Job before enabling the daily schedule. No API/media pod rollout.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: abastevo-registry-sync
+  namespace: abastevo-temp
+  labels: {app: abastevo-registry-sync}
+spec:
+  schedule: "0 3 * * *"
+  timeZone: America/Cuiaba
+  concurrencyPolicy: Forbid
+  suspend: true
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    metadata:
+      labels: {app: abastevo-registry-sync}
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1200
+      template:
+        metadata:
+          labels: {app: abastevo-registry-sync}
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: registry-sync
+              # Cached Abastevo DB runtime supplies the preparer's glibc2.41
+              # and public CA bundle. Its PostgreSQL entrypoint is never run.
+              image: postgis/postgis:18-3.6@sha256:60f6ad1d21ea86a67d47780b9a0d1e1d200500f62b19293fa834d0dea80b8677
+              imagePullPolicy: Never
+              command: ["/tools/station-sync"]
+              args: ["--root", "/state", "--prepare", "/tools/prepare_registry", "--loader", "/tools/station-load", "--timeout", "18m"]
+              env:
+                - name: ANPFUEL_DATABASE_URL
+                  valueFrom:
+                    secretKeyRef: {name: abastevo-temp-secrets, key: ANPFUEL_DATABASE_URL}
+                - {name: GOMAXPROCS, value: "1"}
+                - {name: GOMEMLIMIT, value: "32MiB"}
+              resources:
+                requests: {cpu: 25m, memory: 32Mi}
+                limits: {cpu: 250m, memory: 256Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - {name: tools, mountPath: /tools, readOnly: true}
+                - {name: state, mountPath: /state}
+          volumes:
+            - name: tools
+              hostPath:
+                path: /opt/abastevo-temp/registry-sync/releases/__REVISION__
+                type: Directory
+            - name: state
+              hostPath:
+                path: /opt/abastevo-temp/registry-sync/state
+                type: Directory

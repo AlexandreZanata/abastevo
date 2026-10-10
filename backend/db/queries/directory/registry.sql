@@ -228,7 +228,10 @@ FROM registry_assertions a JOIN registry_run_assertions m ON m.assertion_id = a.
 WHERE m.run_id = @run_id AND a.id > @after_id
   AND a.municipality_code IS NOT NULL AND a.state IS NOT NULL
   AND a.source = 'station-prep' AND a.latitude IS NULL AND a.longitude IS NULL
-  AND a.superseded_by IS NULL
+  AND a.superseded_by IS NULL AND (a.station_id IS NULL OR EXISTS (
+ SELECT 1 FROM directory_stations s WHERE s.id=a.station_id AND
+ (s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address
+ OR s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state)))
 ORDER BY a.id LIMIT 100;
 
 -- name: SetInitialRegistryLocality :one
@@ -244,3 +247,29 @@ RETURNING id;
 SELECT count(*) FROM registry_assertions a JOIN registry_run_assertions m ON m.assertion_id=a.id
 WHERE m.run_id = @run_id AND a.source='station-prep' AND a.municipality_code IS NOT NULL
   AND a.state IS NOT NULL AND a.latitude IS NULL AND a.longitude IS NULL AND a.superseded_by IS NULL;
+
+-- name: CountUnpublishedPreparedRows :one
+SELECT count(*) FROM registry_assertions a JOIN registry_run_assertions m ON m.assertion_id=a.id
+WHERE m.run_id = @run_id AND a.source='station-prep' AND a.municipality_code IS NOT NULL
+  AND a.state IS NOT NULL AND a.latitude IS NULL AND a.longitude IS NULL
+  AND a.superseded_by IS NULL AND (a.station_id IS NULL OR EXISTS (
+ SELECT 1 FROM directory_stations s WHERE s.id=a.station_id AND
+ (s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address
+ OR s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state)));
+
+-- name: RefreshPreparedStationFacts :one
+WITH refreshed AS (
+ UPDATE directory_stations AS s
+ SET display_name= @display_name, address= @address::jsonb
+ WHERE s.id= @id AND (s.display_name IS DISTINCT FROM @display_name OR s.address IS DISTINCT FROM @address::jsonb)
+   AND EXISTS (
+    SELECT 1 FROM registry_assertions AS previous JOIN registry_source_runs AS r ON r.id=previous.run_id
+    WHERE previous.station_id=s.id AND previous.source='station-prep'
+      AND previous.display_name=s.display_name AND previous.address=s.address
+      AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL
+   )
+ RETURNING s.id
+)
+SELECT id FROM refreshed
+UNION ALL SELECT id FROM directory_stations WHERE id= @id AND display_name= @display_name AND address= @address::jsonb
+LIMIT 1;

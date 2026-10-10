@@ -124,6 +124,23 @@ func (q *Queries) CountRegistryAssertions(ctx context.Context, runID pgtype.UUID
 	return count, err
 }
 
+const countUnpublishedPreparedRows = `-- name: CountUnpublishedPreparedRows :one
+SELECT count(*) FROM registry_assertions a JOIN registry_run_assertions m ON m.assertion_id=a.id
+WHERE m.run_id = $1 AND a.source='station-prep' AND a.municipality_code IS NOT NULL
+  AND a.state IS NOT NULL AND a.latitude IS NULL AND a.longitude IS NULL
+  AND a.superseded_by IS NULL AND (a.station_id IS NULL OR EXISTS (
+ SELECT 1 FROM directory_stations s WHERE s.id=a.station_id AND
+ (s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address
+ OR s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state)))
+`
+
+func (q *Queries) CountUnpublishedPreparedRows(ctx context.Context, runID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countUnpublishedPreparedRows, runID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createDecision = `-- name: CreateDecision :one
 
 INSERT INTO suggestion_decisions (id, suggestion_id, decision, reason, reviewer, station_id)
@@ -748,7 +765,10 @@ FROM registry_assertions a JOIN registry_run_assertions m ON m.assertion_id = a.
 WHERE m.run_id = $1 AND a.id > $2
   AND a.municipality_code IS NOT NULL AND a.state IS NOT NULL
   AND a.source = 'station-prep' AND a.latitude IS NULL AND a.longitude IS NULL
-  AND a.superseded_by IS NULL
+  AND a.superseded_by IS NULL AND (a.station_id IS NULL OR EXISTS (
+ SELECT 1 FROM directory_stations s WHERE s.id=a.station_id AND
+ (s.display_name IS DISTINCT FROM a.display_name OR s.address IS DISTINCT FROM a.address
+ OR s.municipality_code IS DISTINCT FROM a.municipality_code OR s.state IS DISTINCT FROM a.state)))
 ORDER BY a.id LIMIT 100
 `
 
@@ -882,6 +902,37 @@ func (q *Queries) PreparedDanglingSupersedes(ctx context.Context, runID pgtype.U
 	var count int64
 	err := row.Scan(&count)
 	return count, err
+}
+
+const refreshPreparedStationFacts = `-- name: RefreshPreparedStationFacts :one
+WITH refreshed AS (
+ UPDATE directory_stations AS s
+ SET display_name= $1, address= $2::jsonb
+ WHERE s.id= $3 AND (s.display_name IS DISTINCT FROM $1 OR s.address IS DISTINCT FROM $2::jsonb)
+   AND EXISTS (
+    SELECT 1 FROM registry_assertions AS previous JOIN registry_source_runs AS r ON r.id=previous.run_id
+    WHERE previous.station_id=s.id AND previous.source='station-prep'
+      AND previous.display_name=s.display_name AND previous.address=s.address
+      AND r.state='complete' AND r.prepared_manifest_sha256 IS NOT NULL
+   )
+ RETURNING s.id
+)
+SELECT id FROM refreshed
+UNION ALL SELECT id FROM directory_stations WHERE id= $3 AND display_name= $1 AND address= $2::jsonb
+LIMIT 1
+`
+
+type RefreshPreparedStationFactsParams struct {
+	DisplayName string      `json:"display_name"`
+	Address     []byte      `json:"address"`
+	ID          pgtype.UUID `json:"id"`
+}
+
+func (q *Queries) RefreshPreparedStationFacts(ctx context.Context, arg RefreshPreparedStationFactsParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, refreshPreparedStationFacts, arg.DisplayName, arg.Address, arg.ID)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
 }
 
 const resumePreparedRun = `-- name: ResumePreparedRun :execrows

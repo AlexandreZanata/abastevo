@@ -38,6 +38,7 @@ func main() {
 func run() error {
 	emitDir := flag.String("emit-dir", "", "prepare_registry output with manifest.json and three JSONL streams")
 	dsn := flag.String("dsn", os.Getenv("ANPFUEL_DATABASE_URL"), "postgres DSN (or ANPFUEL_DATABASE_URL)")
+	verify := flag.Bool("verify", false, "verify complete bound registry publication without writes")
 	publish := flag.Bool("publish", false, "publish complete registry input to Directory and unclaimed profiles; never PMQC candidates")
 	attempts := flag.Int("attempts", 3, "bounded retries for transient connection/transaction failures")
 	timeout := flag.Duration("timeout", 10*time.Minute, "overall deadline")
@@ -73,6 +74,17 @@ func run() error {
 		return fmt.Errorf("pool: %w", err)
 	}
 	defer pool.Close()
+	if *verify {
+		if *publish {
+			return fmt.Errorf("verify and publish are mutually exclusive")
+		}
+		report, err := registry.VerifyPreparedPublication(ctx, registry.NewPGStore(pool), manifest)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("verification=complete registry_assertions=%d run=%s\n", report.Reconciled, report.RunID)
+		return nil
+	}
 	var reports map[string]registry.Report
 	err = retryPreparedOperation(ctx, *attempts, func() error {
 		reports, err = registry.LoadPreparedBatch(ctx, pool, manifest, open)
@@ -98,7 +110,7 @@ func run() error {
 		var publication registry.ReconReport
 		err = retryPreparedOperation(ctx, *attempts, func() error {
 			publication, err = registry.PublishPreparedRegistry(ctx, registry.NewPGStore(pool), registry.PreparedPublicationPorts{
-				Canonical: canon, Locality: canon.SetInitialLocality, EnsureProfile: profiles.EnsureUnclaimed,
+				Canonical: canon, Locality: canon.SetInitialLocality, EnsureProfile: profiles.EnsureUnclaimed, RefreshFacts: canon.RefreshPreparedFacts,
 			}, manifest)
 			return err
 		})
